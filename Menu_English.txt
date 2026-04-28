@@ -1,0 +1,38 @@
+PIZZERIA NETWORK - MENU       
+
+SIGNATURE PIZZAS:
+All pizzas include tomato sauce and mozzarella.
+
+1. MARGHERITA CLASSIC
+   Mozzarella, tomato, and fresh basil.
+   • Small (10") .................... $08.99
+   • Medium (12") .................. $12.99
+   • Large (14") .................... $16.99
+
+2. ULTIMATE PEPPERONI
+   Double layers of pepperoni and extra cheese.
+   • Small (10") .................... $10.99
+   • Medium (12") .................. $14.99
+   • Large (14") .................... $18.99
+
+3. PROSCIUTTO (HAM PIZZA)
+   Premium ham, mozzarella, and oregano.
+   • Small (10") .................... $10.99
+   • Medium (12") .................. $14.99
+   • Large (14") .................... $18.99
+
+4. SMOKY BBQ CHICKEN
+   Grilled chicken, red onions, and BBQ sauce.
+   • Small (10") .................... $11.99
+   • Medium (12") .................. $15.99
+   • Large (14") .................... $19.99
+
+SIDES:
+   Garlic Breadsticks (6 pcs) ...... $05.49
+   Hot Wings (8 pcs) ............... $09.99
+
+BEVERAGES:
+   Soft Drinks (Coke / Sprite / Fanta)
+   • 500ml Bottle .................. $01.99
+   • 1.5L Family Size .............. $03.49
+   Mineral Water (500ml) ........... $0.99

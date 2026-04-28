@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+python-multipart
+requests
+python-dotenv
+PyPDF2
+sqlalchemy
+pg8000
+python-jose[cryptography]
+passlib
+bcrypt
+httpx

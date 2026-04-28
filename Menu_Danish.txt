@@ -1,0 +1,38 @@
+PIZZERIA NETWORK - MENUKORT       
+
+SIGNATUR PIZZAER:
+Alle pizzaer inkluderer tomatsauce og mozzarella.
+
+1. MARGHERITA CLASSIC
+   Mozzarella, tomat og frisk basilikum.
+   • Lille (10") .................... 65 kr.
+   • Mellem (12") .................. 85 kr.
+   • Stor (14") .................... 110 kr.
+
+2. ULTIMATE PEPPERONI
+   Dobbelt lag pepperoni og ekstra ost.
+   • Lille (10") .................... 75 kr.
+   • Mellem (12") .................. 95 kr.
+   • Stor (14") .................... 125 kr.
+
+3. PROSCIUTTO (SKINKE PIZZA)
+   Kvalitetsskinke, mozzarella og oregano.
+   • Lille (10") .................... 75 kr.
+   • Mellem (12") .................. 95 kr.
+   • Stor (14") .................... 125 kr.
+
+4. SMOKY BBQ KYLLING
+   Grillet kylling, rødløg og BBQ sauce.
+   • Lille (10") .................... 80 kr.
+   • Mellem (12") .................. 105 kr.
+   • Stor (14") .................... 135 kr.
+
+TILBEHØR:
+   Hvidløgsbrød (6 stk) ............ 35 kr.
+   Hot Wings (8 stk) ............... 65 kr.
+
+DRIKKEVARER:
+   Sodavand (Coke / Sprite / Fanta)
+   • 0.5L Flaske ................... 25 kr.
+   • 1.5L Familie Flaske ........... 45 kr.
+   Kildevand (0.5L) ................ 15 kr.
