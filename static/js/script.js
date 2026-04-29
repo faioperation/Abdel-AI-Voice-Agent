@@ -311,8 +311,13 @@ async function openAgentDetail(id) {
                 <div class="form-group">
                     <label>AI Model</label>
                     <select id="editAgentModel">
+                        <optgroup label="✨ Google Gemini (Best for Multilingual)">
+                            <option value="gemini-2.5-flash" ${a.model === 'gemini-2.5-flash' || !a.model ? 'selected' : ''}>Gemini 2.5 Flash — Best for Danish & Speed</option>
+                            <option value="gemini-2.0-flash" ${a.model === 'gemini-2.0-flash' ? 'selected' : ''}>Gemini 2.0 Flash — Fast & Reliable</option>
+                            <option value="gemini-1.5-pro" ${a.model === 'gemini-1.5-pro' ? 'selected' : ''}>Gemini 1.5 Pro — High Accuracy, Slower</option>
+                        </optgroup>
                         <optgroup label="⚡ Groq (Fastest)">
-                            <option value="llama-3.3-70b-versatile" ${a.model === 'llama-3.3-70b-versatile' || !a.model ? 'selected' : ''}>⚡ Llama 3.3 70B (Groq) — ~150ms</option>
+                            <option value="llama-3.3-70b-versatile" ${a.model === 'llama-3.3-70b-versatile' ? 'selected' : ''}>⚡ Llama 3.3 70B (Groq) — ~150ms</option>
                             <option value="llama-3.1-8b-instant" ${a.model === 'llama-3.1-8b-instant' ? 'selected' : ''}>⚡ Llama 3.1 8B Instant (Groq) — ~80ms</option>
                         </optgroup>
                         <optgroup label="🤖 OpenAI">

@@ -177,12 +177,7 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
         "messages": messages,
         "function": {
             "name": tool_name,
-            "description": (
-                "Save the customer's confirmed pizza order to the database. "
-                "CRITICAL: Read the prices directly from the '# MENU DATA' section in your system prompt. "
-                "CRITICAL: 'total_price' MUST BE GREATER THAN 0. If you pass 0, the order WILL be REJECTED. "
-                "ONLY call this AFTER the customer says 'yes' or 'ja' to the final price summary you read to them."
-            ),
+            "description": "Saves the confirmed pizza order. Use ONLY after customer confirms final price. Read prices from # MENU DATA.",
 
             "parameters": {
                 "type": "object",

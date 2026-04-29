@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @router.post("/api/create-assistant")
 async def create_assistant(
     assistant_name: str = Form(...),
-    model: str = Form("llama-3.3-70b-versatile"),
+    model: str = Form("gemini-2.0-flash"),
     voice_id: str = Form("Hp07ONf6C5qlCKOeB4oo"),
     system_prompt: str = Form(None),
     language: str = Form("da"),
@@ -50,53 +50,39 @@ async def create_assistant(
         base_prompt = PIZZERIA_SYSTEM_PROMPT # Fallback
 
 
-    # --- MENU DATA INJECTION ---
+    # --- HYBRID KB LOGIC ---
+    MAX_INJECTION_LENGTH = 10000
+    use_query_tool = False
+    
     if extracted_texts:
         combined_menu_text = "\n\n".join(extracted_texts)
-        placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-        
-        if language == "da":
-            menu_injection = (
-                "# MENUDATA (STRENG KILDE)\n"
-                "VIGTIGT: Tilbyd KUN varer og priser fra listen nedenfor. Hvis en kunde spørger om noget, "
-                "der IKKE er på listen, skal du høfligt informere om, at det ikke er tilgængeligt. "
-                "Gæt ALDRIG eller brug viden udefra.\n\n"
-                + combined_menu_text
-            )
-        else:
-            menu_injection = (
-                "# MENU DATA (STRICT SOURCE)\n"
-                "CRITICAL: ONLY offer items and prices listed below. If a customer asks for something NOT in this list, "
-                "politely inform them that it is not available. DO NOT guess or use outside knowledge.\n\n"
-                + combined_menu_text
-            )
+        if len(combined_menu_text) <= MAX_INJECTION_LENGTH:
+            # Small files: Inject directly into prompt (No RAG needed)
+            placeholder = "[The menu data will be extracted from your KB file and placed here.]"
+            if language == "da":
+                menu_injection = (
+                    "# MENUDATA (STRENG KILDE)\n"
+                    "VIGTIGT: Tilbyd KUN varer og priser fra listen nedenfor. Hvis en kunde spørger om noget, "
+                    "der IKKE er på listen, skal du høfligt informere om, at det ikke er tilgængeligt. "
+                    "Gæt ALDRIG eller brug viden udefra.\n\n"
+                    + combined_menu_text
+                )
+            else:
+                menu_injection = (
+                    "# MENU DATA (STRICT SOURCE)\n"
+                    "CRITICAL: ONLY offer items and prices listed below. If a customer asks for something NOT in this list, "
+                    "politely inform them that it is not available. DO NOT guess or use outside knowledge.\n\n"
+                    + combined_menu_text
+                )
 
-        
-        if language == "da":
-            placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-            menu_injection = (
-                "# MENUDATA (STRENG KILDE)\n"
-                "VIGTIGT: Tilbyd KUN varer og priser fra listen nedenfor. Hvis en kunde spørger om noget, "
-                "der IKKE er på listen, skal du høfligt informere om, at det ikke er tilgængeligt. "
-                "Gæt ALDRIG eller brug viden udefra.\n\n"
-                + combined_menu_text
-            )
             if placeholder in base_prompt:
                 used_prompt = base_prompt.replace(placeholder, menu_injection)
             else:
                 used_prompt = base_prompt + "\n\n" + menu_injection
         else:
-            placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-            menu_injection = (
-                "# MENU DATA (STRICT SOURCE)\n"
-                "CRITICAL: ONLY offer items and prices listed below. If a customer asks for something NOT in this list, "
-                "politely inform them that it is not available. DO NOT guess or use outside knowledge.\n\n"
-                + combined_menu_text
-            )
-            if placeholder in base_prompt:
-                used_prompt = base_prompt.replace(placeholder, menu_injection)
-            else:
-                used_prompt = base_prompt + "\n\n" + menu_injection
+            # Large files: Do not inject. Rely solely on query_tool (RAG)
+            use_query_tool = True
+            used_prompt = base_prompt
     else:
         used_prompt = base_prompt
 
@@ -127,18 +113,14 @@ async def create_assistant(
 
 
 
-    # Build voice config — Flash v2.5 for lowest TTS latency
-    voice_config = {"provider": provider, "voiceId": voice_id}
+    # Build voice config — Multilingual v2 for Native Danish, Flash v2.5 for English speed
+    voice_config = {"provider": provider, "voiceId": voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
     if provider == "11labs":
-        voice_config["model"] = "eleven_flash_v2_5"
+        voice_config["model"] = "eleven_multilingual_v2" if language == "da" else "eleven_flash_v2_5"
 
 
     # Determine LLM provider
     groq_models = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
-    google_models = [
-        "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.5-flash-lite",
-        "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"
-    ]
     
     if any(model.startswith("gemini-") for model in [model]):
         llm_provider = "google"
@@ -167,7 +149,7 @@ async def create_assistant(
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.4,
+            "waitSeconds": 0.1,
             "smartEndpointingEnabled": True
         },
         "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?" if language == "da" else "Welcome to Pizzeria Network! How may I assist you with your order today?",
@@ -194,7 +176,7 @@ async def create_assistant(
 
     try:
         query_tool_id = None
-        if vapi_file_ids:
+        if vapi_file_ids and use_query_tool:
             query_tool_id = await create_query_tool(vapi_file_ids)
             await attach_tool_to_assistant(assistant_id, query_tool_id, current_model)
 
@@ -258,11 +240,14 @@ async def get_vapi_voices(user=Depends(get_current_user)):
         if resp.status_code == 200:
             voices = resp.json()
         
-        # If the response is empty or failed, use a curated fallback
+        # If the response is empty or failed, use a curated fallback with native options
         if not voices:
             voices = [
-                {"id": "Elliot", "name": "Elliot", "provider": "vapi"},
-                {"id": "Savannah", "name": "Savannah", "provider": "vapi"}
+                {"id": "jsCqWAovK2LkecY7zXl4", "name": "Freja (Native Danish)", "provider": "11labs"},
+                {"id": "CJVigY5qzO86Hvf0ASMj", "name": "Erik (Native Danish)", "provider": "11labs"},
+                {"id": "IKne3meq5aSn9XLyUdCD", "name": "Charlie (English)", "provider": "11labs"},
+                {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel (English)", "provider": "11labs"},
+                {"id": "Elliot", "name": "Elliot (Vapi)", "provider": "vapi"}
             ]
             
         # Ensure Constantin Birkedal is present and at the top
@@ -342,26 +327,85 @@ async def add_files_to_assistant(
         get_resp = await client.get(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
         current_model = get_resp.json().get("model", {}) if get_resp.status_code == 200 else {}
 
-        if assistant.query_tool_id:
+        MAX_INJECTION_LENGTH = 10000
+        
+        # We need to re-evaluate size
+        all_texts = []
+        # Get existing kb texts from db
+        existing_kbs = db.query(KnowledgeBase).filter(KnowledgeBase.assistant_id == assistant_id).all()
+        for k in existing_kbs:
+            if k.extracted_text: all_texts.append(k.extracted_text)
+        all_texts.extend(new_extracted)
+        
+        combined_text = "\n\n".join(all_texts)
+        
+        if len(combined_text) <= MAX_INJECTION_LENGTH:
+            # Small files -> Inject into prompt, remove query_tool if exists
+            p_file = "system_prompt_da.txt" if assistant.language == "da" else "system_prompt_en.txt"
+            try:
+                with open(p_file, "r", encoding="utf-8") as f:
+                    new_base = f.read()
+            except:
+                new_base = PIZZERIA_SYSTEM_PROMPT
+
+            placeholder = "[The menu data will be extracted from your KB file and placed here.]"
+            if assistant.language == "da":
+                menu_injection = "# MENUDATA (STRENG KILDE)\n" + combined_text
+            else:
+                menu_injection = "# MENU DATA (STRICT SOURCE)\n" + combined_text
+                
+            if placeholder in new_base:
+                new_prompt = new_base.replace(placeholder, menu_injection)
+            else:
+                new_prompt = new_base + "\n\n" + menu_injection
+                
+            # Update Prompt
+            messages = current_model.get("messages", [])
+            updated_messages = [m for m in messages if m.get("role") != "system"]
+            updated_messages.insert(0, {"role": "system", "content": new_prompt})
+            
+            # Remove query tool if it exists
+            toolIds = current_model.get("toolIds", [])
+            if assistant.query_tool_id and assistant.query_tool_id in toolIds:
+                toolIds.remove(assistant.query_tool_id)
+                # also delete from vapi
+                try: await client.delete(f"{VAPI_BASE}/tool/{assistant.query_tool_id}", headers=vapi_headers())
+                except: pass
+                assistant.query_tool_id = None
+            
             patch_payload = {
-                "knowledgeBases": [{
-                    "provider": "google",
-                    "name": "pizzeria-kb",
-                    "description": "Restaurant menu, pricing, offers and Pizzeria Network information",
-                    "fileIds": updated_ids
-                }]
+                "model": {
+                    "provider": current_model.get("provider", "google"),
+                    "model": current_model.get("model", "gemini-2.0-flash"),
+                    "messages": updated_messages,
+                    "toolIds": toolIds
+                }
             }
-            patch_resp = await client.patch(
-                f"{VAPI_BASE}/tool/{assistant.query_tool_id}",
-                json=patch_payload,
-                headers=vapi_headers()
-            )
-            if patch_resp.status_code not in (200, 201):
-                raise HTTPException(400, f"Tool update failed: {patch_resp.text}")
+            assistant.system_prompt = new_prompt
+            await client.patch(f"{VAPI_BASE}/assistant/{assistant_id}", json=patch_payload, headers=vapi_headers())
+
         else:
-            new_tool_id = await create_query_tool(updated_ids)
-            await attach_tool_to_assistant(assistant_id, new_tool_id, current_model)
-            assistant.query_tool_id = new_tool_id
+            # Large files -> Use Query Tool, keep prompt clean
+            if assistant.query_tool_id:
+                patch_payload = {
+                    "knowledgeBases": [{
+                        "provider": "google",
+                        "name": "pizzeria-kb",
+                        "description": "Restaurant menu, pricing, offers and Pizzeria Network information",
+                        "fileIds": updated_ids
+                    }]
+                }
+                patch_resp = await client.patch(
+                    f"{VAPI_BASE}/tool/{assistant.query_tool_id}",
+                    json=patch_payload,
+                    headers=vapi_headers()
+                )
+                if patch_resp.status_code not in (200, 201):
+                    raise HTTPException(400, f"Tool update failed: {patch_resp.text}")
+            else:
+                new_tool_id = await create_query_tool(updated_ids)
+                await attach_tool_to_assistant(assistant_id, new_tool_id, current_model)
+                assistant.query_tool_id = new_tool_id
 
     assistant.file_ids = json.dumps(updated_ids)
     for idx, fname in enumerate(new_file_names):
@@ -435,9 +479,10 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
     if data.voice_id is not None:
         vapi_voices = ["Elliot", "Savannah", "Rohan", "Emma", "Clara", "Nico", "Kai", "Sagar"]
         provider = "vapi" if data.voice_id in vapi_voices else "11labs"
-        voice_patch = {"provider": provider, "voiceId": data.voice_id}
+        voice_patch = {"provider": provider, "voiceId": data.voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
         if provider == "11labs":
-            voice_patch["model"] = "eleven_turbo_v2_5"
+            target_lang = data.language if data.language is not None else assistant.language
+            voice_patch["model"] = "eleven_multilingual_v2" if target_lang == "da" else "eleven_flash_v2_5"
         patch_payload["voice"] = voice_patch
         assistant.voice_id = data.voice_id
 
@@ -678,8 +723,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
 
                 patch_payload = {
                     "model": {
-                        "provider": current_model.get("provider", "groq"),
-                        "model": current_model.get("model", "llama-3.1-8b-instant"),
+                        "provider": current_model.get("provider", "google"),
+                        "model": current_model.get("model", "gemini-2.0-flash"),
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id]))
                     },
@@ -690,7 +735,13 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "keywords": unique_kw,
                         "smartFormat": True
                     },
-                    "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?" if va_lang == "da" else "Welcome to Pizzeria Network! How can I help you?"
+                    "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?" if va_lang == "da" else "Welcome to Pizzeria Network! How can I help you?",
+                    "voice": {
+                        "speed": 1.1,
+                        "stability": 0.5,
+                        "similarityBoost": 0.8,
+                        "model": "eleven_multilingual_v2" if va_lang == "da" else "eleven_flash_v2_5"
+                    }
                 }
 
 
