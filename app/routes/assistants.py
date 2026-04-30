@@ -140,24 +140,28 @@ async def create_assistant(
             "keywords": unique_keywords,
             "smartFormat": True
         },
-
-
         "model": {
             "provider": llm_provider,
             "model": model,
-            "messages": [{"role": "system", "content": used_prompt}]
+            "messages": [{"role": "system", "content": used_prompt}],
+            "temperature": 0.7 
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.1,
+            "waitSeconds": 0.6, 
             "smartEndpointingEnabled": True
-        },
-        "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?" if language == "da" else "Welcome to Pizzeria Network! How may I assist you with your order today?",
-        "endCallMessage": "Tak fordi du valgte Pizzeria Network! Hav en god dag!" if language == "da" else "Thank you for choosing Pizzeria Network! Have a wonderful day!",
+        }, 
+        
+        "silenceTimeoutSeconds": 30,
 
+        "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?" if language == "da" else "Welcome to Pizzeria Network! How can I help you today?",
+        "endCallMessage": "Tak for dit opkald, have en god dag!" if language == "da" else "Thank you for calling, have a great day!",
         "recordingEnabled": True,
         "maxDurationSeconds": 600,
     }
+
+
+
     if BACKEND_URL:
         assistant_payload["serverUrl"] = f"{BACKEND_URL}/api/webhook/call"
 
