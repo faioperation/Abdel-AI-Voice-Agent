@@ -144,11 +144,11 @@ async def create_assistant(
             "provider": llm_provider,
             "model": model,
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.7 
+            "temperature": 0.5 
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.6, 
+            "waitSeconds": 0.4, 
             "smartEndpointingEnabled": True
         }, 
         
