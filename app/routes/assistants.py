@@ -40,8 +40,7 @@ async def create_assistant(
             text = extract_text_from_bytes(content, file.filename)
             extracted_texts.append(text)
 
-    # Load the correct base prompt based on language
-    prompt_file = "system_prompt_da.txt" if language == "da" else "system_prompt_en.txt"
+    prompt_file = "system_prompt_da.txt"
     try:
         with open(prompt_file, "r", encoding="utf-8") as f:
             base_prompt = f.read()
@@ -59,21 +58,13 @@ async def create_assistant(
         if len(combined_menu_text) <= MAX_INJECTION_LENGTH:
             # Small files: Inject directly into prompt (No RAG needed)
             placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-            if language == "da":
-                menu_injection = (
-                    "# MENUDATA (STRENG KILDE)\n"
-                    "VIGTIGT: Tilbyd KUN varer og priser fra listen nedenfor. Hvis en kunde spørger om noget, "
-                    "der IKKE er på listen, skal du høfligt informere om, at det ikke er tilgængeligt. "
-                    "Gæt ALDRIG eller brug viden udefra.\n\n"
-                    + combined_menu_text
-                )
-            else:
-                menu_injection = (
-                    "# MENU DATA (STRICT SOURCE)\n"
-                    "CRITICAL: ONLY offer items and prices listed below. If a customer asks for something NOT in this list, "
-                    "politely inform them that it is not available. DO NOT guess or use outside knowledge.\n\n"
-                    + combined_menu_text
-                )
+            menu_injection = (
+                "# MENUDATA (STRENG KILDE)\n"
+                "VIGTIGT: Tilbyd KUN varer og priser fra listen nedenfor. Hvis en kunde spørger om noget, "
+                "der IKKE er på listen, skal du høfligt informere om, at det ikke er tilgængeligt. "
+                "Gæt ALDRIG eller brug viden udefra.\n\n"
+                + combined_menu_text
+            )
 
             if placeholder in base_prompt:
                 used_prompt = base_prompt.replace(placeholder, menu_injection)
@@ -92,9 +83,7 @@ async def create_assistant(
     provider = "vapi" if voice_id in vapi_voices else "11labs"
 
     # --- KEYWORD BOOSTING FOR ACCURACY ---
-    keywords = []
-    if language == "da":
-        keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"])
+    keywords = ["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"]
 
 
     
@@ -134,17 +123,15 @@ async def create_assistant(
     assistant_payload = {
         "name": assistant_name,
         "transcriber": {
-            "provider": "deepgram",
-            "model": "nova-2",
-            "language": language,
-            "keywords": unique_keywords,
-            "smartFormat": True
+            "provider": "gladia",
+            "model": "fast",
+            "language": "da"
         },
         "model": {
-            "provider": llm_provider,
-            "model": model,
+            "provider": "google",
+            "model": "gemini-2.5-flash",
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.3 
+            "temperature": 0.0 
         },
         "voice": voice_config,
         "startSpeakingPlan": {
@@ -154,8 +141,8 @@ async def create_assistant(
         
         "silenceTimeoutSeconds": 30,
 
-        "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?" if language == "da" else "Welcome to Pizzeria Network! How can I help you today?",
-        "endCallMessage": "Tak for dit opkald, have en god dag!" if language == "da" else "Thank you for calling, have a great day!",
+        "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?",
+        "endCallMessage": "Tak for dit opkald, have en god dag!",
         "recordingEnabled": True,
         "maxDurationSeconds": 600,
     }
@@ -676,16 +663,16 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 assistant_id  = va.get("id")
                 current_model = va.get("model", {})
                 
-                # Determine language from DB or default to 'en'
+                # Determine language from DB or default to 'da'
                 db_a = db.query(Assistant).filter(Assistant.id == assistant_id).first()
-                va_lang = db_a.language if db_a else "en"
+                va_lang = "da" # Force all to Danish
                 extracted_texts = kb_map.get(assistant_id, [])
 
                 # Ensure order tool is fresh and correct for this language
                 order_tool_id = await create_order_tool(language=va_lang)
 
                 # Load correct prompt
-                p_file = "system_prompt_da.txt" if va_lang == "da" else "system_prompt_en.txt"
+                p_file = "system_prompt_da.txt"
                 try:
                     with open(p_file, "r", encoding="utf-8") as f:
                         final_prompt = f.read()
@@ -695,10 +682,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 if extracted_texts:
                     combined_menu_text = "\n\n".join(extracted_texts)
                     placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-                    if va_lang == "da":
+                    if True:
                         menu_header = "# MENUDATA (STRENG KILDE)\n"
-                    else:
-                        menu_header = "# MENU DATA (STRICT SOURCE)\n"
                     
                     menu_injection = menu_header + combined_menu_text
                     
@@ -712,9 +697,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 messages.insert(0, {"role": "system", "content": final_prompt})
 
                 # Generate keywords for this assistant
-                current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"]
-                if va_lang == "da":
-                    current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"])
+                current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"]
                 
                 if extracted_texts:
                     import re
@@ -735,18 +718,17 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 patch_payload = {
                     "model": {
                         "provider": current_model.get("provider", "google"),
-                        "model": current_model.get("model", "gemini-2.0-flash"),
+                        "model": "gemini-2.5-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
-                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id]))
+                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
+                        "temperature": 0.0
                     },
                     "transcriber": {
-                        "provider": "deepgram",
-                        "model":    "nova-2",
-                        "language": va_lang,
-                        "keywords": unique_kw,
-                        "smartFormat": True
+                        "provider": "gladia",
+                        "model": "fast",
+                        "language": "da"
                     },
-                    "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?" if va_lang == "da" else "Welcome to Pizzeria Network! How can I help you?",
+                    "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
                     "startSpeakingPlan": {
                         "waitSeconds": 0.8,
                         "smartEndpointingEnabled": True
