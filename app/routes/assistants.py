@@ -144,11 +144,11 @@ async def create_assistant(
             "provider": llm_provider,
             "model": model,
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.4 
+            "temperature": 0.5 
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.8, 
+            "waitSeconds": 1.0, 
             "smartEndpointingEnabled": True
         }, 
         
@@ -748,7 +748,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     },
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?" if va_lang == "da" else "Welcome to Pizzeria Network! How can I help you?",
                     "startSpeakingPlan": {
-                        "waitSeconds": 0.8,
+                        "waitSeconds": 1.0,
                         "smartEndpointingEnabled": True
                     },
                     "voice": current_voice
