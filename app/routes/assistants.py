@@ -94,7 +94,7 @@ async def create_assistant(
     # --- KEYWORD BOOSTING FOR ACCURACY ---
     keywords = []
     if language == "da":
-        keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"])
+        keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"])
 
 
     
@@ -714,7 +714,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 # Generate keywords for this assistant
                 current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"]
                 if va_lang == "da":
-                    current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse"])
+                    current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"])
                 
                 if extracted_texts:
                     import re
@@ -726,12 +726,10 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 unique_kw = [k for k in unique_kw if k.isalpha()][:50]
 
                 current_voice = va.get("voice", {})
-                current_voice.update({
-                    "speed": 1.1,
-                    "stability": 0.5,
-                    "similarityBoost": 0.8
-                })
+                current_voice["speed"] = 1.1
                 if current_voice.get("provider") == "11labs":
+                    current_voice["stability"] = 0.5
+                    current_voice["similarityBoost"] = 0.8
                     current_voice["model"] = "eleven_flash_v2_5"
 
                 patch_payload = {
