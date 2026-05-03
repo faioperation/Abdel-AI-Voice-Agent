@@ -116,7 +116,8 @@ async def create_assistant(
     # Build voice config — Multilingual v2 for Native Danish, Flash v2.5 for English speed
     voice_config = {"provider": provider, "voiceId": voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
     if provider == "11labs":
-        voice_config["model"] = "eleven_multilingual_v2" if language == "da" else "eleven_flash_v2_5"
+#        voice_config["model"] = "eleven_multilingual_v2" if language == "da" else "eleven_flash_v2_5"        
+        voice_config["model"] = "eleven_flash_v2_5"
 
 
     # Determine LLM provider
@@ -148,7 +149,7 @@ async def create_assistant(
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.4, 
+            "waitSeconds": 0.8, 
             "smartEndpointingEnabled": True
         }, 
         
@@ -486,7 +487,8 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         voice_patch = {"provider": provider, "voiceId": data.voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
         if provider == "11labs":
             target_lang = data.language if data.language is not None else assistant.language
-            voice_patch["model"] = "eleven_multilingual_v2" if target_lang == "da" else "eleven_flash_v2_5"
+#            voice_patch["model"] = "eleven_multilingual_v2" if target_lang == "da" else "eleven_flash_v2_5"
+            voice_patch["model"] = "eleven_flash_v2_5"
         patch_payload["voice"] = voice_patch
         assistant.voice_id = data.voice_id
 
@@ -740,11 +742,16 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "smartFormat": True
                     },
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?" if va_lang == "da" else "Welcome to Pizzeria Network! How can I help you?",
+                    "startSpeakingPlan": {
+                        "waitSeconds": 0.8,
+                        "smartEndpointingEnabled": True
+                    },
                     "voice": {
                         "speed": 1.1,
                         "stability": 0.5,
                         "similarityBoost": 0.8,
-                        "model": "eleven_multilingual_v2" if va_lang == "da" else "eleven_flash_v2_5"
+#                        "model": "eleven_multilingual_v2" if va_lang == "da" else "eleven_flash_v2_5"
+                        "model": "eleven_flash_v2_5"
                     }
                 }
 
