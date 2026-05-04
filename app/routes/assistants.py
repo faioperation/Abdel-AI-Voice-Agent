@@ -705,7 +705,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "gemini-2.0-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.0
+                        "temperature": 0.4
                     },
                     "transcriber": {
                         "provider": "gladia",
