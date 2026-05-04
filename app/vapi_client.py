@@ -209,4 +209,4 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
         response = await client.post(f"{VAPI_BASE}/tool", json=payload, headers=vapi_headers())
     if response.status_code not in (200, 201):
         raise Exception(f"Order tool creation failed: {response.text}")
-    return response.json()["id"]
+    return response.json()["id"]
