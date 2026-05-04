@@ -78,15 +78,9 @@ async def create_assistant(
         used_prompt = base_prompt
 
 
-    # Determine TTS provider — Flash v2.5 for 11labs (fastest), native for Vapi voices
-    vapi_voices = ["Elliot", "Savannah", "Rohan", "Emma", "Clara", "Nico", "Kai", "Sagar"]
-    provider = "vapi" if voice_id in vapi_voices else "11labs"
-
     # --- KEYWORD BOOSTING FOR ACCURACY ---
     keywords = ["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"]
 
-
-    
     if extracted_texts:
         import re
         for text in extracted_texts:
@@ -99,24 +93,15 @@ async def create_assistant(
     unique_keywords = [k for k in unique_keywords if k.isalpha()][:50]
     print(f"CLEANED KEYWORDS: {unique_keywords}")
 
-
-
-
-    # Build voice config — Multilingual v2 for Native Danish, Flash v2.5 for English speed
-    voice_config = {"provider": provider, "voiceId": voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
-    if provider == "11labs":
-        voice_config["model"] = "eleven_flash_v2_5"
-
-
-    # Determine LLM provider
-    groq_models = ["llama-3.3-70b-versatile", "llama-3.1-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"]
-    
-    if any(model.startswith("gemini-") for model in [model]):
-        llm_provider = "google"
-    elif model in groq_models:
-        llm_provider = "groq"
-    else:
-        llm_provider = "openai"
+    # Force Voice Config: ElevenLabs Flash v2.5
+    voice_config = {
+        "provider": "11labs", 
+        "voiceId": voice_id, 
+        "speed": 1.1, 
+        "stability": 0.5, 
+        "similarityBoost": 0.8,
+        "model": "eleven_flash_v2_5"
+    }
 
 
 
@@ -131,7 +116,7 @@ async def create_assistant(
             "provider": "google",
             "model": "gemini-2.5-flash",
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.0 
+            "temperature": 0.4 
         },
         "voice": voice_config,
         "startSpeakingPlan": {
@@ -237,8 +222,7 @@ async def get_vapi_voices(user=Depends(get_current_user)):
                 {"id": "jsCqWAovK2LkecY7zXl4", "name": "Freja (Native Danish)", "provider": "11labs"},
                 {"id": "CJVigY5qzO86Hvf0ASMj", "name": "Erik (Native Danish)", "provider": "11labs"},
                 {"id": "IKne3meq5aSn9XLyUdCD", "name": "Charlie (English)", "provider": "11labs"},
-                {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel (English)", "provider": "11labs"},
-                {"id": "Elliot", "name": "Elliot (Vapi)", "provider": "vapi"}
+                {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel (English)", "provider": "11labs"}
             ]
             
         # Ensure Constantin Birkedal is present and at the top
@@ -366,8 +350,8 @@ async def add_files_to_assistant(
             
             patch_payload = {
                 "model": {
-                    "provider": current_model.get("provider", "google"),
-                    "model": current_model.get("model", "gemini-2.0-flash"),
+                    "provider": "google",
+                    "model": "gemini-2.5-flash",
                     "messages": updated_messages,
                     "toolIds": toolIds
                 }
@@ -448,32 +432,33 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         updated_messages = [m for m in messages if m.get("role") != "system"]
         updated_messages.insert(0, {"role": "system", "content": data.system_prompt})
         patch_payload["model"] = {
-            "provider": current_model.get("provider", "openai"),
-            "model": current_model.get("model", "gpt-4o-mini"),
+            "provider": "google",
+            "model": "gemini-2.5-flash",
             "messages": updated_messages,
             "toolIds": current_model.get("toolIds", [])
         }
         assistant.system_prompt = data.system_prompt
 
     if data.model is not None:
+        # Ignore custom model input, enforce Gemini 2.5 Flash
         if "model" not in patch_payload:
             patch_payload["model"] = {
-                "provider": current_model.get("provider", "openai"),
-                "model": data.model,
+                "provider": "google",
+                "model": "gemini-2.5-flash",
                 "messages": current_model.get("messages", []),
                 "toolIds": current_model.get("toolIds", [])
             }
-        else:
-            patch_payload["model"]["model"] = data.model
-        assistant.model = data.model
+        assistant.model = "gemini-2.5-flash"
 
     if data.voice_id is not None:
-        vapi_voices = ["Elliot", "Savannah", "Rohan", "Emma", "Clara", "Nico", "Kai", "Sagar"]
-        provider = "vapi" if data.voice_id in vapi_voices else "11labs"
-        voice_patch = {"provider": provider, "voiceId": data.voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
-        if provider == "11labs":
-            target_lang = data.language if data.language is not None else assistant.language
-            voice_patch["model"] = "eleven_flash_v2_5"
+        voice_patch = {
+            "provider": "11labs", 
+            "voiceId": data.voice_id, 
+            "speed": 1.1, 
+            "stability": 0.5, 
+            "similarityBoost": 0.8,
+            "model": "eleven_flash_v2_5"
+        }
         patch_payload["voice"] = voice_patch
         assistant.voice_id = data.voice_id
 
@@ -709,19 +694,19 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 unique_kw = [k for k in unique_kw if k.isalpha()][:50]
 
                 current_voice = va.get("voice", {})
+                current_voice["provider"] = "11labs"
                 current_voice["speed"] = 1.1
-                if current_voice.get("provider") == "11labs":
-                    current_voice["stability"] = 0.5
-                    current_voice["similarityBoost"] = 0.8
-                    current_voice["model"] = "eleven_flash_v2_5"
+                current_voice["stability"] = 0.5
+                current_voice["similarityBoost"] = 0.8
+                current_voice["model"] = "eleven_flash_v2_5"
 
                 patch_payload = {
                     "model": {
-                        "provider": current_model.get("provider", "google"),
+                        "provider": "google",
                         "model": "gemini-2.5-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.0
+                        "temperature": 0.4
                     },
                     "transcriber": {
                         "provider": "gladia",
