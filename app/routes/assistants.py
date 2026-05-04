@@ -119,18 +119,6 @@ async def create_assistant(
             "temperature": 0.4 
         },
         "voice": voice_config,
-        "fallbackPlan": {
-            "voices": [
-                {
-                    "provider": "11labs",
-                    "voiceId": "IKne3meq5aSn9XLyUdCD", # Charlie
-                    "model": "eleven_flash_v2_5",
-                    "speed": 1.1,
-                    "stability": 0.5,
-                    "similarityBoost": 0.8
-                }
-            ]
-        },
         "startSpeakingPlan": {
             "waitSeconds": 0.8, 
             "smartEndpointingEnabled": True
@@ -729,19 +717,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "waitSeconds": 0.8,
                         "smartEndpointingEnabled": True
                     },
-                    "voice": current_voice,
-                    "fallbackPlan": {
-                        "voices": [
-                            {
-                                "provider": "11labs",
-                                "voiceId": "IKne3meq5aSn9XLyUdCD", # Charlie
-                                "model": "eleven_flash_v2_5",
-                                "speed": 1.1,
-                                "stability": 0.5,
-                                "similarityBoost": 0.8
-                            }
-                        ]
-                    }
+                    "voice": current_voice
                 }
 
 
