@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 @router.post("/api/create-assistant")
 async def create_assistant(
     assistant_name: str = Form(...),
-    model: str = Form("gemini-2.5-flash"),
+    model: str = Form("gemini-2.0-flash"),
     voice_id: str = Form("IKne3meq5aSn9XLyUdCD"), # Default to Charlie
     system_prompt: str = Form(None),
     language: str = Form("da"),
@@ -114,7 +114,7 @@ async def create_assistant(
         },
         "model": {
             "provider": "google",
-            "model": "gemini-2.5-flash",
+            "model": "gemini-2.0-flash",
             "messages": [{"role": "system", "content": used_prompt}],
             "temperature": 0.4 
         },
@@ -350,7 +350,7 @@ async def add_files_to_assistant(
             patch_payload = {
                 "model": {
                     "provider": "google",
-                    "model": "gemini-2.5-flash",
+                    "model": "gemini-2.0-flash",
                     "messages": updated_messages,
                     "toolIds": toolIds
                 }
@@ -432,7 +432,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         updated_messages.insert(0, {"role": "system", "content": data.system_prompt})
         patch_payload["model"] = {
             "provider": "google",
-            "model": "gemini-2.5-flash",
+            "model": "gemini-2.0-flash",
             "messages": updated_messages,
             "toolIds": current_model.get("toolIds", [])
         }
@@ -443,11 +443,11 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         if "model" not in patch_payload:
             patch_payload["model"] = {
                 "provider": "google",
-                "model": "gemini-2.5-flash",
+                "model": "gemini-2.0-flash",
                 "messages": current_model.get("messages", []),
                 "toolIds": current_model.get("toolIds", [])
             }
-        assistant.model = "gemini-2.5-flash"
+        assistant.model = "gemini-2.0-flash"
 
     if data.voice_id is not None:
         voice_patch = {
@@ -702,7 +702,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 patch_payload = {
                     "model": {
                         "provider": "google",
-                        "model": "gemini-2.5-flash",
+                        "model": "gemini-2.0-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
                         "temperature": 0.0
