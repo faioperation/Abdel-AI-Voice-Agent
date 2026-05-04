@@ -108,15 +108,15 @@ async def create_assistant(
     assistant_payload = {
         "name": assistant_name,
         "transcriber": {
-            "provider": "gladia",
-            "model": "fast",
+            "provider": "11labs",
+            "model": "scribe_v1",
             "language": "da"
         },
         "model": {
             "provider": "google",
             "model": "gemini-2.0-flash",
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.4 
+            "temperature": 0.3 
         },
         "voice": voice_config,
         "startSpeakingPlan": {
@@ -706,11 +706,11 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "gemini-2.0-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.0
+                        "temperature": 0.3
                     },
                     "transcriber": {
-                        "provider": "gladia",
-                        "model": "fast",
+                        "provider": "11labs",
+                        "model": "scribe_v1",
                         "language": "da"
                     },
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
