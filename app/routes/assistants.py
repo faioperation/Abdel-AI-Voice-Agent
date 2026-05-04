@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 @router.post("/api/create-assistant")
 async def create_assistant(
     assistant_name: str = Form(...),
-    model: str = Form("gemini-2.0-flash"),
-    voice_id: str = Form("Hp07ONf6C5qlCKOeB4oo"),
+    model: str = Form("gemini-2.5-flash"),
+    voice_id: str = Form("IKne3meq5aSn9XLyUdCD"), # Default to Charlie
     system_prompt: str = Form(None),
     language: str = Form("da"),
     files: list[UploadFile] = File(None),
@@ -205,8 +205,8 @@ def get_assistants(db: Session = Depends(get_db), user=Depends(get_current_user)
 @router.get("/api/vapi-voices")
 async def get_vapi_voices(user=Depends(get_current_user)):
     """Fetch voices from Vapi API (configured voices in the user's account)."""
-    # We always want Constantin Birkedal to be available as he is the requested default
-    constantin = {"id": "Hp07ONf6C5qlCKOeB4oo", "name": "Constantin Birkedal", "provider": "11labs"}
+    # We always want Charlie to be available as he is the standard default free voice
+    default_voice = {"id": "IKne3meq5aSn9XLyUdCD", "name": "Charlie", "provider": "11labs"}
     
     try:
         async with httpx.AsyncClient(timeout=10) as client:
@@ -224,15 +224,15 @@ async def get_vapi_voices(user=Depends(get_current_user)):
                 {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel (English)", "provider": "11labs"}
             ]
             
-        # Ensure Constantin Birkedal is present and at the top
+        # Ensure Charlie is present and at the top
         # Check if he's already in the list (by ID)
-        if not any(v.get('id') == constantin['id'] or v.get('voiceId') == constantin['id'] for v in voices):
-            voices.insert(0, constantin)
+        if not any(v.get('id') == default_voice['id'] or v.get('voiceId') == default_voice['id'] for v in voices):
+            voices.insert(0, default_voice)
             
         return voices
     except Exception as e:
         logger.error(f"Error fetching Vapi voices: {e}")
-        return [constantin]
+        return [default_voice]
 
 @router.get("/api/assistant/{assistant_id}")
 async def get_assistant_detail(assistant_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -705,7 +705,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "gemini-2.5-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.4
+                        "temperature": 0.0
                     },
                     "transcriber": {
                         "provider": "gladia",
