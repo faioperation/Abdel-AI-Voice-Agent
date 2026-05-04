@@ -694,6 +694,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
 
                 current_voice = va.get("voice", {})
                 current_voice["provider"] = "11labs"
+                current_voice["voiceId"] = "IKne3meq5aSn9XLyUdCD" # Force Charlie
                 current_voice["speed"] = 1.1
                 current_voice["stability"] = 0.5
                 current_voice["similarityBoost"] = 0.8
@@ -705,7 +706,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "gemini-2.0-flash",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.4
+                        "temperature": 0.0
                     },
                     "transcriber": {
                         "provider": "gladia",
