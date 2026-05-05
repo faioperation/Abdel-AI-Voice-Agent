@@ -139,9 +139,9 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
                             if should_update:
                                 if language == "da":
                                     patch_payload["messages"] = [
-                                        {"type": "request-start", "content": "Gemmer dine ordreoplysninger..."},
-                                        {"type": "request-complete", "content": "Ordre gemt med succes."},
-                                        {"type": "request-failed", "content": "Beklager, jeg kunne ikke gemme ordren. Prøv venligst igen."}
+                                        {"type": "request-start", "content": "Et øjeblik, jeg sender lige din ordre afsted..."},
+                                        {"type": "request-complete", "content": "Sådan! Din bestilling er nu modtaget og vi går i gang."},
+                                        {"type": "request-failed", "content": "Beklager, der skete en lille fejl med at gemme ordren. Skal vi prøve igen?"}
                                     ]
                                 else:
                                     patch_payload["messages"] = [
@@ -167,9 +167,9 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
     ]
     if language == "da":
         messages = [
-            {"type": "request-start", "content": "Gemmer dine ordreoplysninger..."},
-            {"type": "request-complete", "content": "Ordre gemt med succes."},
-            {"type": "request-failed", "content": "Beklager, jeg kunne ikke gemme ordren. Prøv venligst igen."}
+            {"type": "request-start", "content": "Et øjeblik, jeg sender lige din ordre afsted..."},
+            {"type": "request-complete", "content": "Sådan! Din bestilling er nu modtaget og vi går i gang."},
+            {"type": "request-failed", "content": "Beklager, der skete en lille fejl med at gemme ordren. Skal vi prøve igen?"}
         ]
 
     payload = {
