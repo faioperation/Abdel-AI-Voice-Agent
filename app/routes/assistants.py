@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 async def create_assistant(
     assistant_name: str = Form(...),
     model: str = Form("gemini-2.0-flash"),
-    voice_id: str = Form("IKne3meq5aSn9XLyUdCD"), # Default to Charlie
+    voice_id: str = Form("Hp07ONf6C5qlCKOeB4oo"),
     system_prompt: str = Form(None),
     language: str = Form("da"),
     files: list[UploadFile] = File(None),
@@ -40,7 +40,8 @@ async def create_assistant(
             text = extract_text_from_bytes(content, file.filename)
             extracted_texts.append(text)
 
-    prompt_file = "system_prompt_da.txt"
+    # Load the base prompt
+    prompt_file = "system_prompt.txt"
     try:
         with open(prompt_file, "r", encoding="utf-8") as f:
             base_prompt = f.read()
@@ -57,7 +58,7 @@ async def create_assistant(
         combined_menu_text = "\n\n".join(extracted_texts)
         if len(combined_menu_text) <= MAX_INJECTION_LENGTH:
             # Small files: Inject directly into prompt (No RAG needed)
-            placeholder = "[The menu data will be extracted from your KB file and placed here.]"
+            placeholder = "[The menu data will be extracted from your KB file and placed here. If this section is empty, use 'knowledge-search' for all items.]"
             menu_injection = (
                 "# MENUDATA (STRENG KILDE)\n"
                 "VIGTIGT: Tilbyd KUN varer og priser fra listen nedenfor. Hvis en kunde spørger om noget, "
@@ -78,9 +79,15 @@ async def create_assistant(
         used_prompt = base_prompt
 
 
-    # --- KEYWORD BOOSTING FOR ACCURACY ---
-    keywords = ["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"]
+    # Determine TTS provider — Flash v2.5 for 11labs (fastest), native for Vapi voices
+    vapi_voices = ["Elliot", "Savannah", "Rohan", "Emma", "Clara", "Nico", "Kai", "Sagar"]
+    provider = "vapi" if voice_id in vapi_voices else "11labs"
 
+    keywords = []
+    keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"])
+
+
+    
     if extracted_texts:
         import re
         for text in extracted_texts:
@@ -93,28 +100,34 @@ async def create_assistant(
     unique_keywords = [k for k in unique_keywords if k.isalpha()][:50]
     print(f"CLEANED KEYWORDS: {unique_keywords}")
 
-    # Force Voice Config: ElevenLabs Flash v2.5
-    voice_config = {
-        "provider": "11labs", 
-        "voiceId": voice_id, 
-        "speed": 1.1, 
-        "stability": 0.5, 
-        "similarityBoost": 0.8,
-        "model": "eleven_flash_v2_5"
-    }
+
+
+
+    # Build voice config — Multilingual v2 for Native Danish, Flash v2.5 for English speed
+    voice_config = {"provider": provider, "voiceId": voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
+    if provider == "11labs":
+        voice_config["model"] = "eleven_flash_v2_5"
+
+
+    # Enforce Gemini models
+    if not model.startswith("gemini-"):
+        model = "gemini-2.5-flash"
+    llm_provider = "google"
 
 
 
     assistant_payload = {
         "name": assistant_name,
         "transcriber": {
-            "provider": "11labs",
-            "model": "scribe_v1",
-            "language": "da"
+            "provider": "deepgram",
+            "model": "nova-3",
+            "language": "da",
+            "keywords": unique_keywords,
+            "smartFormat": True
         },
         "model": {
-            "provider": "google",
-            "model": "gemini-2.0-flash",
+            "provider": llm_provider,
+            "model": model,
             "messages": [{"role": "system", "content": used_prompt}],
             "temperature": 0.3 
         },
@@ -123,6 +136,7 @@ async def create_assistant(
             "waitSeconds": 0.8, 
             "smartEndpointingEnabled": True
         }, 
+        
         "silenceTimeoutSeconds": 30,
 
         "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?",
@@ -205,8 +219,8 @@ def get_assistants(db: Session = Depends(get_db), user=Depends(get_current_user)
 @router.get("/api/vapi-voices")
 async def get_vapi_voices(user=Depends(get_current_user)):
     """Fetch voices from Vapi API (configured voices in the user's account)."""
-    # We always want Charlie to be available as he is the standard default free voice
-    default_voice = {"id": "IKne3meq5aSn9XLyUdCD", "name": "Charlie", "provider": "11labs"}
+    # We always want Constantin Birkedal to be available as he is the requested default
+    constantin = {"id": "Hp07ONf6C5qlCKOeB4oo", "name": "Constantin Birkedal", "provider": "11labs"}
     
     try:
         async with httpx.AsyncClient(timeout=10) as client:
@@ -221,18 +235,19 @@ async def get_vapi_voices(user=Depends(get_current_user)):
                 {"id": "jsCqWAovK2LkecY7zXl4", "name": "Freja (Native Danish)", "provider": "11labs"},
                 {"id": "CJVigY5qzO86Hvf0ASMj", "name": "Erik (Native Danish)", "provider": "11labs"},
                 {"id": "IKne3meq5aSn9XLyUdCD", "name": "Charlie (English)", "provider": "11labs"},
-                {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel (English)", "provider": "11labs"}
+                {"id": "21m00Tcm4TlvDq8ikWAM", "name": "Rachel (English)", "provider": "11labs"},
+                {"id": "Elliot", "name": "Elliot (Vapi)", "provider": "vapi"}
             ]
             
-        # Ensure Charlie is present and at the top
+        # Ensure Constantin Birkedal is present and at the top
         # Check if he's already in the list (by ID)
-        if not any(v.get('id') == default_voice['id'] or v.get('voiceId') == default_voice['id'] for v in voices):
-            voices.insert(0, default_voice)
+        if not any(v.get('id') == constantin['id'] or v.get('voiceId') == constantin['id'] for v in voices):
+            voices.insert(0, constantin)
             
         return voices
     except Exception as e:
         logger.error(f"Error fetching Vapi voices: {e}")
-        return [default_voice]
+        return [constantin]
 
 @router.get("/api/assistant/{assistant_id}")
 async def get_assistant_detail(assistant_id: str, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -315,18 +330,15 @@ async def add_files_to_assistant(
         
         if len(combined_text) <= MAX_INJECTION_LENGTH:
             # Small files -> Inject into prompt, remove query_tool if exists
-            p_file = "system_prompt_da.txt" if assistant.language == "da" else "system_prompt_en.txt"
+            p_file = "system_prompt.txt"
             try:
                 with open(p_file, "r", encoding="utf-8") as f:
                     new_base = f.read()
             except:
                 new_base = PIZZERIA_SYSTEM_PROMPT
 
-            placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-            if assistant.language == "da":
-                menu_injection = "# MENUDATA (STRENG KILDE)\n" + combined_text
-            else:
-                menu_injection = "# MENU DATA (STRICT SOURCE)\n" + combined_text
+            placeholder = "[The menu data will be extracted from your KB file and placed here. If this section is empty, use 'knowledge-search' for all items.]"
+            menu_injection = "# MENUDATA (STRENG KILDE)\n" + combined_text
                 
             if placeholder in new_base:
                 new_prompt = new_base.replace(placeholder, menu_injection)
@@ -349,8 +361,8 @@ async def add_files_to_assistant(
             
             patch_payload = {
                 "model": {
-                    "provider": "google",
-                    "model": "gemini-2.0-flash",
+                    "provider": current_model.get("provider", "google"),
+                    "model": current_model.get("model", "gemini-2.0-flash"),
                     "messages": updated_messages,
                     "toolIds": toolIds
                 }
@@ -431,72 +443,37 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         updated_messages = [m for m in messages if m.get("role") != "system"]
         updated_messages.insert(0, {"role": "system", "content": data.system_prompt})
         patch_payload["model"] = {
-            "provider": "google",
-            "model": "gemini-2.0-flash",
+            "provider": current_model.get("provider", "openai"),
+            "model": current_model.get("model", "gpt-4o-mini"),
             "messages": updated_messages,
             "toolIds": current_model.get("toolIds", [])
         }
         assistant.system_prompt = data.system_prompt
 
     if data.model is not None:
-        # Ignore custom model input, enforce Gemini 2.5 Flash
         if "model" not in patch_payload:
             patch_payload["model"] = {
-                "provider": "google",
-                "model": "gemini-2.0-flash",
+                "provider": current_model.get("provider", "openai"),
+                "model": data.model,
                 "messages": current_model.get("messages", []),
                 "toolIds": current_model.get("toolIds", [])
             }
-        assistant.model = "gemini-2.0-flash"
+        else:
+            patch_payload["model"]["model"] = data.model
+        assistant.model = data.model
 
     if data.voice_id is not None:
-        voice_patch = {
-            "provider": "11labs", 
-            "voiceId": data.voice_id, 
-            "speed": 1.1, 
-            "stability": 0.5, 
-            "similarityBoost": 0.8,
-            "model": "eleven_flash_v2_5"
-        }
+        vapi_voices = ["Elliot", "Savannah", "Rohan", "Emma", "Clara", "Nico", "Kai", "Sagar"]
+        provider = "vapi" if data.voice_id in vapi_voices else "11labs"
+        voice_patch = {"provider": provider, "voiceId": data.voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
+        if provider == "11labs":
+            target_lang = data.language if data.language is not None else assistant.language
+            voice_patch["model"] = "eleven_flash_v2_5"
         patch_payload["voice"] = voice_patch
         assistant.voice_id = data.voice_id
 
     if data.language is not None:
-        assistant.language = data.language
-        # Load the new correct prompt for this language
-        new_prompt_file = "system_prompt_da.txt" if data.language == "da" else "system_prompt_en.txt"
-        try:
-            with open(new_prompt_file, "r", encoding="utf-8") as f:
-                new_base_prompt = f.read()
-            # If there's menu data in DB, re-inject it
-            kb_list = db.query(KnowledgeBase).filter(KnowledgeBase.assistant_id == assistant_id).all()
-            if kb_list:
-                combined_menu = "\n\n".join([k.extracted_text for k in kb_list if k.extracted_text])
-                placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-                if placeholder in new_base_prompt:
-                    new_base_prompt = new_base_prompt.replace(placeholder, combined_menu)
-                else:
-                    new_base_prompt = new_base_prompt + "\n\n# MENU DATA\n" + combined_menu
-            
-            assistant.system_prompt = new_base_prompt
-            # Update patch payload
-            if "model" not in patch_payload:
-                patch_payload["model"] = current_model.copy()
-            
-            messages = patch_payload["model"].get("messages", [])
-            updated_messages = [m for m in messages if m.get("role") != "system"]
-            updated_messages.insert(0, {"role": "system", "content": new_base_prompt})
-            patch_payload["model"]["messages"] = updated_messages
-            
-            # Update transcriber language
-            patch_payload["transcriber"] = vapi_assistant.get("transcriber", {})
-            patch_payload["transcriber"]["language"] = data.language
-            
-            # Update first message
-            patch_payload["firstMessage"] = "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?" if data.language == "da" else "Welcome to Pizzeria Network! How can I help you?"
-            
-        except Exception as e:
-            logger.error(f"Error switching prompt during update: {e}")
+        assistant.language = "da"
 
 
     if patch_payload:
@@ -647,16 +624,16 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 assistant_id  = va.get("id")
                 current_model = va.get("model", {})
                 
-                # Determine language from DB or default to 'da'
+                # Determine language from DB or default to 'en'
                 db_a = db.query(Assistant).filter(Assistant.id == assistant_id).first()
-                va_lang = "da" # Force all to Danish
+                va_lang = db_a.language if db_a else "en"
                 extracted_texts = kb_map.get(assistant_id, [])
 
                 # Ensure order tool is fresh and correct for this language
                 order_tool_id = await create_order_tool(language=va_lang)
 
                 # Load correct prompt
-                p_file = "system_prompt_da.txt"
+                p_file = "system_prompt.txt"
                 try:
                     with open(p_file, "r", encoding="utf-8") as f:
                         final_prompt = f.read()
@@ -665,9 +642,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
 
                 if extracted_texts:
                     combined_menu_text = "\n\n".join(extracted_texts)
-                    placeholder = "[The menu data will be extracted from your KB file and placed here.]"
-                    if True:
-                        menu_header = "# MENUDATA (STRENG KILDE)\n"
+                    placeholder = "[The menu data will be extracted from your KB file and placed here. If this section is empty, use 'knowledge-search' for all items.]"
+                    menu_header = "# MENUDATA (STRENG KILDE)\n"
                     
                     menu_injection = menu_header + combined_menu_text
                     
@@ -681,7 +657,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 messages.insert(0, {"role": "system", "content": final_prompt})
 
                 # Generate keywords for this assistant
-                current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon", "skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pomfritter", "fritter", "pommes", "pølser", "tilbehør", "kartoffelbåde", "kyllingevinger", "snackboks"]
+                current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"]
+                current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse"])
                 
                 if extracted_texts:
                     import re
@@ -693,25 +670,25 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 unique_kw = [k for k in unique_kw if k.isalpha()][:50]
 
                 current_voice = va.get("voice", {})
-                current_voice["provider"] = "11labs"
-                current_voice["voiceId"] = "IKne3meq5aSn9XLyUdCD" # Force Charlie
                 current_voice["speed"] = 1.1
-                current_voice["stability"] = 0.5
-                current_voice["similarityBoost"] = 0.8
-                current_voice["model"] = "eleven_flash_v2_5"
+                if current_voice.get("provider") == "11labs":
+                    current_voice["stability"] = 0.5
+                    current_voice["similarityBoost"] = 0.8
+                    current_voice["model"] = "eleven_flash_v2_5"
 
                 patch_payload = {
                     "model": {
-                        "provider": "google",
-                        "model": "gemini-2.0-flash",
+                        "provider": current_model.get("provider", "google"),
+                        "model": current_model.get("model", "gemini-2.0-flash"),
                         "messages": [{"role": "system", "content": final_prompt}],
-                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.3
+                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id]))
                     },
                     "transcriber": {
-                        "provider": "11labs",
-                        "model": "scribe_v1",
-                        "language": "da"
+                        "provider": "deepgram",
+                        "model": "nova-3",
+                        "language": "da",
+                        "keywords": unique_kw,
+                        "smartFormat": True
                     },
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
                     "startSpeakingPlan": {
