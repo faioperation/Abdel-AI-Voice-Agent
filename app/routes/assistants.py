@@ -85,8 +85,7 @@ async def create_assistant(
 
     keywords = []
     keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"])
-
-
+    keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes"])
     
     if extracted_texts:
         import re
@@ -95,12 +94,28 @@ async def create_assistant(
             found = re.findall(r'[a-zA-ZæøåÆØÅ]+', text)
             keywords.extend([k.lower() for k in found if len(k) > 3])
     
-    # Final cleanup: lowercase, alpha only, unique, limit to 50
+    # Final cleanup: lowercase, alpha only, unique, no limit. Add :2 boost for Deepgram
     unique_keywords = sorted(list(set(keywords)))
-    unique_keywords = [k for k in unique_keywords if k.isalpha()][:50]
+    unique_keywords = [k for k in unique_keywords if k.isalpha()]
+    boosted_keywords = [f"{k}:2" for k in unique_keywords]
     print(f"CLEANED KEYWORDS: {unique_keywords}")
 
-
+    # Determine Transcriber based on name
+    use_elevenlabs_stt = "11labs" in assistant_name.lower() or "elevenlabs" in assistant_name.lower()
+    if use_elevenlabs_stt:
+        transcriber_config = {
+            "provider": "11labs",
+            "model": "scribe_v2",
+            "language": "da"
+        }
+    else:
+        transcriber_config = {
+            "provider": "deepgram",
+            "model": "nova-3",
+            "language": "da",
+            "keywords": boosted_keywords,
+            "smartFormat": True
+        }
 
 
     # Build voice config — Multilingual v2 for Native Danish, Flash v2.5 for English speed
@@ -118,13 +133,7 @@ async def create_assistant(
 
     assistant_payload = {
         "name": assistant_name,
-        "transcriber": {
-            "provider": "deepgram",
-            "model": "nova-3",
-            "language": "da",
-            "keywords": unique_keywords,
-            "smartFormat": True
-        },
+        "transcriber": transcriber_config,
         "model": {
             "provider": llm_provider,
             "model": model,
@@ -659,6 +668,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 # Generate keywords for this assistant
                 current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"]
                 current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse"])
+                current_keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes"])
                 
                 if extracted_texts:
                     import re
@@ -667,7 +677,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         current_keywords.extend([k.lower() for k in found if len(k) > 3])
                 
                 unique_kw = sorted(list(set(current_keywords)))
-                unique_kw = [k for k in unique_kw if k.isalpha()][:50]
+                unique_kw = [k for k in unique_kw if k.isalpha()]
+                boosted_keywords = [f"{k}:2" for k in unique_kw]
 
                 current_voice = va.get("voice", {})
                 current_voice["speed"] = 1.1
@@ -676,6 +687,24 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     current_voice["similarityBoost"] = 0.8
                     current_voice["model"] = "eleven_flash_v2_5"
 
+                # Determine Transcriber based on name
+                assistant_name = va.get("name", "")
+                use_elevenlabs_stt = "11labs" in assistant_name.lower() or "elevenlabs" in assistant_name.lower()
+                if use_elevenlabs_stt:
+                    transcriber_config = {
+                        "provider": "11labs",
+                        "model": "scribe_v2",
+                        "language": "da"
+                    }
+                else:
+                    transcriber_config = {
+                        "provider": "deepgram",
+                        "model": "nova-3",
+                        "language": "da",
+                        "keywords": boosted_keywords,
+                        "smartFormat": True
+                    }
+
                 patch_payload = {
                     "model": {
                         "provider": current_model.get("provider", "google"),
@@ -683,13 +712,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id]))
                     },
-                    "transcriber": {
-                        "provider": "deepgram",
-                        "model": "nova-3",
-                        "language": "da",
-                        "keywords": unique_kw,
-                        "smartFormat": True
-                    },
+                    "transcriber": transcriber_config,
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
                     "startSpeakingPlan": {
                         "waitSeconds": 0.8,
