@@ -85,7 +85,7 @@ async def create_assistant(
 
     keywords = []
     keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"])
-    keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes"])
+    keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes", "tun", "tunsalat", "pastakylling", "kebab", "bbq"])
     
     if extracted_texts:
         import re
@@ -672,7 +672,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 # Generate keywords for this assistant
                 current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"]
                 current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse"])
-                current_keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes"])
+                current_keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes", "tun", "tunsalat", "pastakylling", "kebab", "bbq"])
                 
                 if extracted_texts:
                     import re
