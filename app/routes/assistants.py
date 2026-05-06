@@ -145,6 +145,7 @@ async def create_assistant(
             "waitSeconds": 0.8, 
             "smartEndpointingEnabled": True
         }, 
+        "backchannelingEnabled": False,
         
         "silenceTimeoutSeconds": 30,
 
@@ -373,7 +374,8 @@ async def add_files_to_assistant(
                     "provider": current_model.get("provider", "google"),
                     "model": current_model.get("model", "gemini-2.0-flash"),
                     "messages": updated_messages,
-                    "toolIds": toolIds
+                    "toolIds": toolIds,
+                    "temperature": 0.3
                 }
             }
             assistant.system_prompt = new_prompt
@@ -455,7 +457,8 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
             "provider": current_model.get("provider", "openai"),
             "model": current_model.get("model", "gpt-4o-mini"),
             "messages": updated_messages,
-            "toolIds": current_model.get("toolIds", [])
+            "toolIds": current_model.get("toolIds", []),
+            "temperature": 0.3
         }
         assistant.system_prompt = data.system_prompt
 
@@ -465,7 +468,8 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
                 "provider": current_model.get("provider", "openai"),
                 "model": data.model,
                 "messages": current_model.get("messages", []),
-                "toolIds": current_model.get("toolIds", [])
+                "toolIds": current_model.get("toolIds", []),
+                "temperature": 0.3
             }
         else:
             patch_payload["model"]["model"] = data.model
@@ -710,7 +714,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "provider": current_model.get("provider", "google"),
                         "model": current_model.get("model", "gemini-2.0-flash"),
                         "messages": [{"role": "system", "content": final_prompt}],
-                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id]))
+                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
+                        "temperature": 0.3
                     },
                     "transcriber": transcriber_config,
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
@@ -718,6 +723,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "waitSeconds": 0.8,
                         "smartEndpointingEnabled": True
                     },
+                    "backchannelingEnabled": False,
                     "voice": current_voice
                 }
 
