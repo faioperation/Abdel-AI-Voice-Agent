@@ -105,7 +105,7 @@ async def create_assistant(
     if use_elevenlabs_stt:
         transcriber_config = {
             "provider": "11labs",
-            "model": "scribe_v2",
+            "model": "scribe_v2_realtime",
             "language": "da"
         }
     else:
@@ -124,9 +124,9 @@ async def create_assistant(
         voice_config["model"] = "eleven_flash_v2_5"
 
 
-    # Enforce Gemini models
-    if not model.startswith("gemini-"):
-        model = "gemini-2.5-flash"
+    # Enforce Gemini s
+    if not .startswith("gemini-"):
+         = "gemini-2.5-flash"
     llm_provider = "google"
 
 
@@ -697,7 +697,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 if use_elevenlabs_stt:
                     transcriber_config = {
                         "provider": "11labs",
-                        "model": "scribe_v2",
+                        "model": "scribe_v2_realtime",
                         "language": "da"
                     }
                 else:
