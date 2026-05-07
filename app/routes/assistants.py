@@ -84,8 +84,11 @@ async def create_assistant(
     provider = "vapi" if voice_id in vapi_voices else "11labs"
 
     keywords = []
+    # Core menu & ordering terms
     keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse", "pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"])
     keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes", "tun", "tunsalat", "pastakylling", "kebab", "bbq"])
+    # Critical terms found miscatched in transcripts (vand→fragment, shawarma→hallucination, oksekød→Mørket)
+    keywords.extend(["vand", "shawarma", "salatpizza", "agurk", "tomat", "stor", "lille", "mellem", "ekstra", "vegetar", "bolognese", "fiskefilet", "snackbox", "pastrami", "avocado", "jalapeno", "paprika", "mozzarella", "truffle", "diavola", "mascarpone", "barbecue"])
     
     if extracted_texts:
         import re
@@ -94,11 +97,11 @@ async def create_assistant(
             found = re.findall(r'[a-zA-ZæøåÆØÅ]+', text)
             keywords.extend([k.lower() for k in found if len(k) > 3])
     
-    # Final cleanup: lowercase, alpha only, unique, no limit. Add :2 boost for Deepgram
+    # Final cleanup: lowercase, alpha only, unique. Boost weight :4 (up from :2) for critical Danish terms
     unique_keywords = sorted(list(set(keywords)))
     unique_keywords = [k for k in unique_keywords if k.isalpha()]
-    boosted_keywords = [f"{k}:2" for k in unique_keywords]
-    print(f"CLEANED KEYWORDS: {unique_keywords}")
+    boosted_keywords = [f"{k}:4" for k in unique_keywords]
+    print(f"CLEANED KEYWORDS ({len(unique_keywords)}): {unique_keywords}")
 
     # Determine Transcriber based on name
     use_elevenlabs_stt = "11labs" in assistant_name.lower() or "elevenlabs" in assistant_name.lower()
@@ -114,7 +117,8 @@ async def create_assistant(
             "model": "nova-3",
             "language": "da",
             "keywords": boosted_keywords,
-            "smartFormat": True
+            "smartFormat": True,
+            "endpointing": 500  # 500ms is the sweet spot: fast handoff but allows for natural breaths
         }
 
 
@@ -124,9 +128,9 @@ async def create_assistant(
         voice_config["model"] = "eleven_flash_v2_5"
 
 
-    # Enforce Gemini s
-    if not .startswith("gemini-"):
-         = "gemini-2.5-flash"
+    # Enforce Gemini models
+    if not model.startswith("gemini-"):
+        model = "gemini-2.5-flash"
     llm_provider = "google"
 
 
@@ -142,12 +146,18 @@ async def create_assistant(
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.8, 
+            "waitSeconds": 0.5,  # 0.5s is the "Gold Standard": snappy but gives room for a natural breath
             "smartEndpointingEnabled": True
-        }, 
+        },
+        # Professional Interruption: stops on "Nej vent" (2 words). 1.0s backoff gives user room to finish.
+        "stopSpeakingPlan": {
+            "numWords": 2,
+            "voiceSeconds": 0.2,
+            "backoffSeconds": 0.8
+        },
         "backchannelingEnabled": False,
-        
-        "silenceTimeoutSeconds": 30,
+
+        "silenceTimeoutSeconds": 30,  # Call hangup safety valve — NOT related to turn-taking latency
 
         "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med i dag?",
         "endCallMessage": "Tak for dit opkald, have en god dag!",
@@ -673,6 +683,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 current_keywords = ["pizza", "pepperoni", "margherita", "oksekød", "kylling", "bacon"]
                 current_keywords.extend(["skinke", "løg", "ananas", "champignon", "hvidløg", "dressing", "sodavand", "levering", "afhentning", "størrelse"])
                 current_keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes", "tun", "tunsalat", "pastakylling", "kebab", "bbq"])
+                # Expanded seed for existing assistants
+                current_keywords.extend(["vand", "shawarma", "salatpizza", "agurk", "tomat", "stor", "lille", "mellem", "ekstra", "vegetar", "bolognese", "fiskefilet", "snackbox", "pastrami", "avocado", "jalapeno", "paprika", "mozzarella", "truffle", "diavola", "mascarpone", "barbecue"])
                 
                 if extracted_texts:
                     import re
@@ -682,7 +694,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 
                 unique_kw = sorted(list(set(current_keywords)))
                 unique_kw = [k for k in unique_kw if k.isalpha()]
-                boosted_keywords = [f"{k}:2" for k in unique_kw]
+                boosted_keywords = [f"{k}:4" for k in unique_kw]
 
                 current_voice = va.get("voice", {})
                 current_voice["speed"] = 1.1
@@ -706,7 +718,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "nova-3",
                         "language": "da",
                         "keywords": boosted_keywords,
-                        "smartFormat": True
+                        "smartFormat": True,
+                        "endpointing": 500
                     }
 
                 patch_payload = {
@@ -720,8 +733,13 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "transcriber": transcriber_config,
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
                     "startSpeakingPlan": {
-                        "waitSeconds": 0.8,
+                        "waitSeconds": 0.5,
                         "smartEndpointingEnabled": True
+                    },
+                    "stopSpeakingPlan": {
+                        "numWords": 2,
+                        "voiceSeconds": 0.2,
+                        "backoffSeconds": 0.8
                     },
                     "backchannelingEnabled": False,
                     "voice": current_voice
