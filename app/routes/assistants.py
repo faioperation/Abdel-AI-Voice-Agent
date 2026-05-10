@@ -120,7 +120,7 @@ async def create_assistant(
             "language": "da",
             "keywords": boosted_keywords,
             "smartFormat": True,
-            "endpointing": 800  # 800ms prevents STT from cutting user off during short breaths
+            "endpointing": 500  # Vapi max is 500ms
         }
 
 
@@ -723,7 +723,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "language": "da",
                         "keywords": boosted_keywords,
                         "smartFormat": True,
-                        "endpointing": 800
+                        "endpointing": 500
                     }
 
                 patch_payload = {
