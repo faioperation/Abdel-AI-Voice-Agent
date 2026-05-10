@@ -89,6 +89,8 @@ async def create_assistant(
     keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes", "tun", "tunsalat", "pastakylling", "kebab", "bbq"])
     # Critical terms found miscatched in transcripts (vand→fragment, shawarma→hallucination, oksekød→Mørket)
     keywords.extend(["vand", "shawarma", "salatpizza", "agurk", "tomat", "stor", "lille", "mellem", "ekstra", "vegetar", "bolognese", "fiskefilet", "snackbox", "pastrami", "avocado", "jalapeno", "paprika", "mozzarella", "truffle", "diavola", "mascarpone", "barbecue"])
+    # Short yes/no affirmations
+    keywords.extend(["ja", "jo", "jep", "nej", "ellers tak"])
     
     if extracted_texts:
         import re
@@ -118,7 +120,7 @@ async def create_assistant(
             "language": "da",
             "keywords": boosted_keywords,
             "smartFormat": True,
-            "endpointing": 500  # 500ms is the sweet spot: fast handoff but allows for natural breaths
+            "endpointing": 800  # 800ms prevents STT from cutting user off during short breaths
         }
 
 
@@ -146,14 +148,14 @@ async def create_assistant(
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.5,  # 0.5s is the "Gold Standard": snappy but gives room for a natural breath
+            "waitSeconds": 0.7,  # Increased to prevent agent from dropping the first sentence
             "smartEndpointingEnabled": True
         },
-        # Professional Interruption: stops on "Nej vent" (2 words). 1.0s backoff gives user room to finish.
+        # Professional Interruption: stops on "Nej vent" (2 words).
         "stopSpeakingPlan": {
             "numWords": 2,
-            "voiceSeconds": 0.2,
-            "backoffSeconds": 0.8
+            "voiceSeconds": 0.3,
+            "backoffSeconds": 1.0
         },
         "backchannelingEnabled": False,
 
@@ -685,6 +687,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 current_keywords.extend(["burger", "cheeseburger", "nuggets", "cola", "coke", "frites", "pommes", "tun", "tunsalat", "pastakylling", "kebab", "bbq"])
                 # Expanded seed for existing assistants
                 current_keywords.extend(["vand", "shawarma", "salatpizza", "agurk", "tomat", "stor", "lille", "mellem", "ekstra", "vegetar", "bolognese", "fiskefilet", "snackbox", "pastrami", "avocado", "jalapeno", "paprika", "mozzarella", "truffle", "diavola", "mascarpone", "barbecue"])
+                # Short yes/no affirmations
+                current_keywords.extend(["ja", "jo", "jep", "nej", "ellers tak"])
                 
                 if extracted_texts:
                     import re
@@ -719,7 +723,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "language": "da",
                         "keywords": boosted_keywords,
                         "smartFormat": True,
-                        "endpointing": 500
+                        "endpointing": 800
                     }
 
                 patch_payload = {
@@ -733,13 +737,13 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "transcriber": transcriber_config,
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
                     "startSpeakingPlan": {
-                        "waitSeconds": 0.5,
+                        "waitSeconds": 0.7,
                         "smartEndpointingEnabled": True
                     },
                     "stopSpeakingPlan": {
                         "numWords": 2,
-                        "voiceSeconds": 0.2,
-                        "backoffSeconds": 0.8
+                        "voiceSeconds": 0.3,
+                        "backoffSeconds": 1.0
                     },
                     "backchannelingEnabled": False,
                     "voice": current_voice
