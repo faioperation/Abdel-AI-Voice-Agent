@@ -119,6 +119,7 @@ async def create_assistant(
     elif use_speechmatics:
         transcriber_config = {
             "provider": "speechmatics",
+            "model": "default",
             "language": "da"
         }
     else:
@@ -178,7 +179,8 @@ async def create_assistant(
 
 
     if BACKEND_URL:
-        assistant_payload["serverUrl"] = f"{BACKEND_URL}/api/webhook/call"
+        clean_backend_url = BACKEND_URL.rstrip('/')
+        assistant_payload["serverUrl"] = f"{clean_backend_url}/api/webhook/call"
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(f"{VAPI_BASE}/assistant", json=assistant_payload, headers=vapi_headers())
@@ -731,6 +733,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 elif use_speechmatics:
                     transcriber_config = {
                         "provider": "speechmatics",
+                        "model": "default",
                         "language": "da"
                     }
                 else:
