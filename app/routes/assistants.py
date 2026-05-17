@@ -106,11 +106,19 @@ async def create_assistant(
     print(f"CLEANED KEYWORDS ({len(unique_keywords)}): {unique_keywords}")
 
     # Determine Transcriber based on name
-    use_elevenlabs_stt = "11labs" in assistant_name.lower() or "elevenlabs" in assistant_name.lower()
+    assistant_name_lower = assistant_name.lower()
+    use_elevenlabs_stt = "11labs" in assistant_name_lower or "elevenlabs" in assistant_name_lower
+    use_speechmatics = "speechmatics" in assistant_name_lower
+
     if use_elevenlabs_stt:
         transcriber_config = {
             "provider": "11labs",
             "model": "scribe_v2_realtime",
+            "language": "da"
+        }
+    elif use_speechmatics:
+        transcriber_config = {
+            "provider": "speechmatics",
             "language": "da"
         }
     else:
@@ -120,12 +128,12 @@ async def create_assistant(
             "language": "da",
             "keywords": boosted_keywords,
             "smartFormat": True,
-            "endpointing": 500  # Vapi max is 500ms
+            "endpointing": 300  # Reduced from 500 for faster turn-taking
         }
 
 
     # Build voice config — Multilingual v2 for Native Danish, Flash v2.5 for English speed
-    voice_config = {"provider": provider, "voiceId": voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
+    voice_config = {"provider": provider, "voiceId": voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8, "optimizeStreamingLatency": 4}
     if provider == "11labs":
         voice_config["model"] = "eleven_flash_v2_5"
 
@@ -148,7 +156,7 @@ async def create_assistant(
         },
         "voice": voice_config,
         "startSpeakingPlan": {
-            "waitSeconds": 0.7,  # Increased to prevent agent from dropping the first sentence
+            "waitSeconds": 0.1,  # Reduced from 0.7 for near-instant response
             "smartEndpointingEnabled": True
         },
         # Professional Interruption: stops on "Nej vent" (2 words).
@@ -490,7 +498,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
     if data.voice_id is not None:
         vapi_voices = ["Elliot", "Savannah", "Rohan", "Emma", "Clara", "Nico", "Kai", "Sagar"]
         provider = "vapi" if data.voice_id in vapi_voices else "11labs"
-        voice_patch = {"provider": provider, "voiceId": data.voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8}
+        voice_patch = {"provider": provider, "voiceId": data.voice_id, "speed": 1.1, "stability": 0.5, "similarityBoost": 0.8, "optimizeStreamingLatency": 4}
         if provider == "11labs":
             target_lang = data.language if data.language is not None else assistant.language
             voice_patch["model"] = "eleven_flash_v2_5"
@@ -702,6 +710,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
 
                 current_voice = va.get("voice", {})
                 current_voice["speed"] = 1.1
+                current_voice["optimizeStreamingLatency"] = 4
                 if current_voice.get("provider") == "11labs":
                     current_voice["stability"] = 0.5
                     current_voice["similarityBoost"] = 0.8
@@ -709,11 +718,19 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
 
                 # Determine Transcriber based on name
                 assistant_name = va.get("name", "")
-                use_elevenlabs_stt = "11labs" in assistant_name.lower() or "elevenlabs" in assistant_name.lower()
+                assistant_name_lower = assistant_name.lower()
+                use_elevenlabs_stt = "11labs" in assistant_name_lower or "elevenlabs" in assistant_name_lower
+                use_speechmatics = "speechmatics" in assistant_name_lower
+
                 if use_elevenlabs_stt:
                     transcriber_config = {
                         "provider": "11labs",
                         "model": "scribe_v2_realtime",
+                        "language": "da"
+                    }
+                elif use_speechmatics:
+                    transcriber_config = {
+                        "provider": "speechmatics",
                         "language": "da"
                     }
                 else:
@@ -723,7 +740,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "language": "da",
                         "keywords": boosted_keywords,
                         "smartFormat": True,
-                        "endpointing": 500
+                        "endpointing": 300
                     }
 
                 patch_payload = {
@@ -737,7 +754,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "transcriber": transcriber_config,
                     "firstMessage": "Velkommen til Pizzeria Network! Hvad kan jeg hjælpe dig med?",
                     "startSpeakingPlan": {
-                        "waitSeconds": 0.7,
+                        "waitSeconds": 0.1,
                         "smartEndpointingEnabled": True
                     },
                     "stopSpeakingPlan": {
