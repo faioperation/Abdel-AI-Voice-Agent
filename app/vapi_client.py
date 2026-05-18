@@ -83,10 +83,11 @@ async def attach_tool_to_assistant(assistant_id: str, tool_id: str, current_mode
         existing_tool_ids.append(tool_id)
     patch_payload = {
         "model": {
-            "provider": current_model.get("provider", "openai"),
-            "model": current_model.get("model", "gpt-4o-mini"),
+            "provider": "openai",
+            "model": "gpt-4o",
             "messages": current_model.get("messages", []),
-            "toolIds": existing_tool_ids
+            "toolIds": existing_tool_ids,
+            "temperature": 0.3
         }
     }
     async with httpx.AsyncClient(timeout=20) as client:
