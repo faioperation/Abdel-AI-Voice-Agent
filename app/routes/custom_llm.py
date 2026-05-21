@@ -37,7 +37,7 @@ async def stream_openai_response(payload: dict):
             "https://api.openai.com/v1/chat/completions",
             json=openai_payload,
             headers=headers,
-            timeout=60.0
+            timeout=620.0
         ) as response:
             
             # OpenAI SSE streams look like: data: {"id":...}\n\n
