@@ -9,7 +9,7 @@ import httpx
 import os
 from app.database import get_db, Assistant, KnowledgeBase
 from app.auth import get_current_user
-from app.config import PIZZERIA_SYSTEM_PROMPT, VAPI_BASE, BACKEND_URL
+from app.config import PIZZERIA_SYSTEM_PROMPT, VAPI_BASE, BACKEND_URL, VAPI_SECRET
 from app.vapi_client import upload_file_to_vapi, create_query_tool, attach_tool_to_assistant, vapi_headers, delete_file_from_vapi, create_order_tool
 from app.file_utils import extract_text_from_bytes
 
@@ -106,14 +106,23 @@ async def create_assistant(
     model = "gpt-4o"
     llm_provider = "openai"
 
+    if BACKEND_URL:
+        clean_backend_url = BACKEND_URL.rstrip('/')
+    else:
+        clean_backend_url = "https://test6.fireai.agency" # Fallback to known backend
+
     assistant_payload = {
         "name": assistant_name,
         "transcriber": transcriber_config,
         "model": {
-            "provider": llm_provider,
+            "provider": "custom-llm",
             "model": model,
+            "url": f"{clean_backend_url}/api/chat/completions",
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.3 
+            "temperature": 0.3,
+            "headers": {
+                "x-vapi-secret": VAPI_SECRET
+            }
         },
         "voice": voice_config,
         "recordingEnabled": True,
@@ -330,13 +339,18 @@ async def add_files_to_assistant(
                 except: pass
                 assistant.query_tool_id = None
             
+            clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
             patch_payload = {
                 "model": {
-                    "provider": "openai",
+                    "provider": "custom-llm",
                     "model": "gpt-4o",
+                    "url": f"{clean_backend_url}/api/chat/completions",
                     "messages": updated_messages,
                     "toolIds": toolIds,
-                    "temperature": 0.3
+                    "temperature": 0.3,
+                    "headers": {
+                        "x-vapi-secret": VAPI_SECRET
+                    }
                 }
             }
             assistant.system_prompt = new_prompt
@@ -414,24 +428,34 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         messages = current_model.get("messages", [])
         updated_messages = [m for m in messages if m.get("role") != "system"]
         updated_messages.insert(0, {"role": "system", "content": data.system_prompt})
+        clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
         patch_payload["model"] = {
-            "provider": "openai",
+            "provider": "custom-llm",
             "model": "gpt-4o",
+            "url": f"{clean_backend_url}/api/chat/completions",
             "messages": updated_messages,
             "toolIds": current_model.get("toolIds", []),
-            "temperature": 0.3
+            "temperature": 0.3,
+            "headers": {
+                "x-vapi-secret": VAPI_SECRET
+            }
         }
         assistant.system_prompt = data.system_prompt
 
     if data.model is not None:
         assistant.model = "gpt-4o"
         if "model" not in patch_payload:
+            clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
             patch_payload["model"] = {
-                "provider": "openai",
+                "provider": "custom-llm",
                 "model": "gpt-4o",
+                "url": f"{clean_backend_url}/api/chat/completions",
                 "messages": current_model.get("messages", []),
                 "toolIds": current_model.get("toolIds", []),
-                "temperature": 0.3
+                "temperature": 0.3,
+                "headers": {
+                    "x-vapi-secret": VAPI_SECRET
+                }
             }
 
     if data.voice_id is not None:
@@ -590,6 +614,9 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 if k.extracted_text:
                     kb_map[k.assistant_id].append(k.extracted_text)
 
+            # Cache tool creation/update to avoid hitting Vapi rate limits in the loop
+            order_tool_cache = {}
+            import asyncio
 
             for va in vapi_assistants:
                 assistant_id  = va.get("id")
@@ -601,7 +628,11 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 extracted_texts = kb_map.get(assistant_id, [])
 
                 # Ensure order tool is fresh and correct for this language
-                order_tool_id = await create_order_tool(language=va_lang)
+                if va_lang not in order_tool_cache:
+                    order_tool_cache[va_lang] = await create_order_tool(language=va_lang)
+                    # Small delay to respect Vapi's API rate limits
+                    await asyncio.sleep(1)
+                order_tool_id = order_tool_cache[va_lang]
 
                 # Load correct prompt
                 p_file = "system_prompt.txt"
@@ -651,13 +682,18 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "language": "da"
                 }
 
+                clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
                 patch_payload = {
                     "model": {
-                        "provider": "openai",
+                        "provider": "custom-llm",
                         "model": "gpt-4o",
+                        "url": f"{clean_backend_url}/api/chat/completions",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
-                        "temperature": 0.3
+                        "temperature": 0.3,
+                        "headers": {
+                            "x-vapi-secret": VAPI_SECRET
+                        }
                     },
                     "transcriber": transcriber_config,
                     "recordingEnabled": True,
@@ -700,6 +736,9 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 else:
                     failed.append({"id": assistant_id, "error": resp.text})
                     logger.warning(f"Failed to update assistant {assistant_id}: {resp.text}")
+
+                # Introduce a small sleep to avoid hitting Vapi's API rate limits for assistant patch requests
+                await asyncio.sleep(1)
 
         db.commit()
         return {
