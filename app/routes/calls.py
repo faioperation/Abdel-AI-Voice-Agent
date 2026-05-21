@@ -139,7 +139,7 @@ async def get_calls(assistant_id: str = None, user=Depends(get_current_user)):
     if assistant_id:
         params["assistantId"] = assistant_id
 
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with httpx.AsyncClient(timeout=60) as client:
         res = await client.get(f"{VAPI_BASE}/call", headers=headers, params=params)
 
     if res.status_code != 200:
