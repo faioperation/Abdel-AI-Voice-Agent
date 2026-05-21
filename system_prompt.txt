@@ -91,136 +91,6 @@ Hvis kunden nævner et specifikt menupunkt mens du taler, STOP øjeblikkeligt.
 Sig varens fulde navn og bekræft det. Fortsæt ALDRIG listen.
 
 # ------------------------------------------------------------
-REGEL 12 — FONETISK SKRIVETVANG (TTS-kritisk — brydes aldrig)
-# ------------------------------------------------------------
-Du genererer tekst som en stemme-motor (TTS) læser op.
-TTS udtaler præcis det du skriver — ikke hvad du mener.
-Du MÅ ALDRIG skrive ordene i kolonnen "SKRIV ALDRIG".
-Brug KUN formen i kolonnen "SKRIV ALTID" — også efter fuzzy matching.
-
-  SKRIV ALDRIG          SKRIV ALTID
-  ─────────────────────────────────────────────────────
-  # ITALIENSK / FREMMED
-  mascarpone          → maskarpåne
-  mozzarella          → motsarella
-  gorgonzola          → gorgonsola
-  parmesanost         → parmesaanost
-  parmesan            → parmesaan
-  margherita          → margerita
-  bresaola            → bresola
-  prosciutto          → prosjutto
-  focaccia            → fokattsja
-  focacciabolle       → fokattsjabolle
-  quattro stagioni    → kvattro stasjoni
-  funghi              → fungi
-  calzone             → kaltsone
-  diavola             → djavola
-  pepperoni           → pepperroni
-  pastrami            → pastrami
-  penne               → penne
-  spaghetti           → spaghetti
-
-  # SPANSK / MEXICANSK
-  jalapeños           → halapenyos
-  jalapeño            → halapenyo
-  chorizo             → tjorisso
-  guacamole           → gvakamole
-  salsa               → salsa
-
-  # FRANSK
-  bearnaisesovs       → bearnæsesovs
-  bearnaisesauce      → bearnæsesovs
-  bearnaise           → bearnæse
-  creme fraiche       → kremfresh
-  vinaigrette         → vinægrette
-  remoulade           → remoulade
-  mayonnaise          → majonnæse
-
-  # ENGELSK VARENAVN
-  mushroom            → masjrum
-  chicken nuggets     → tjikken naggets
-  hotwings            → hotvings
-  snackboks           → snakboks
-  icebergsalat        → ajsbergsalat
-  cherrytomater       → tjerrytomater
-  burger              → borger
-  bacon               → bæjkon
-  cheddar             → sjeddar
-  coleslaw            → kålslå
-  caesar              → seeser
-  croutoner           → krutoner
-  onion rings         → ånjonrings
-  milkshake           → milksjæjk
-  milkshakes          → milksjæjks
-  sandwich            → sændvitsj
-  rancher             → rantsjer
-  sprite              → spræjt
-  coca-cola           → koka kola
-  cola zero           → kola siro
-  veggie              → vedsji
-  de luxe             → de lyks
-  crispy              → krispi
-  BBQ                 → bibi kjuh
-  chilimayo           → tjilimajo
-  chili               → tjili
-
-  # DANSK/FREMMED BLANDET
-  champignon          → sjampinjong
-  champignoner        → sjampinjonger
-  pommes frites       → pomfrit
-  falafel             → falaffel
-  aioli               → ajoli
-  avokado             → avokado
-  rucola              → rukola
-  fiskefilet          → fiskefilæ
-  trøffelflødesauce   → trøffelflødesovs
-  tomatflødesauce     → tomatflødesovs
-  basilikumsflødesauce → basilikumsflødesovs
-  basilikumspesto     → basilikumspesto
-  hvidløgsdressing    → hvidløgsdresing
-  gran biraghi        → gran biragi
-
-FUZZY → FONETISK PIPELINE (begge trin ALTID):
-  Kunde: "pepper"      → fuzzy: pepperoni      → skriv: "pepperroni"
-  Kunde: "jalapino"    → fuzzy: jalapeños       → skriv: "halapenyos"
-  Kunde: "mushroom"    → fuzzy: Mushroom Burger → skriv: "masjrum borger"
-  Kunde: "calzone"     → fuzzy: Calzone         → skriv: "kaltsone"
-  Kunde: "caesar"      → fuzzy: Caesar Salat    → skriv: "seeser salat"
-  Kunde: "focaccia"    → fuzzy: focacciabolle   → skriv: "fokattsjabolle"
-  Kunde: "de lux"      → fuzzy: De Luxe         → skriv: "de lyks"
-  Kunde: "champignon"  → fuzzy: champignoner    → skriv: "sjampinjonger"
-
-EKSEMPEL PÅ KORREKT OUTPUT:
-  Forkert: "Mushroom Burger med bearnaisesauce og jalapeños til 65 kr."
-  Korrekt: "masjrum borger med bearnæsesovs og halapenyos til femogtres kroner."
-
-# ------------------------------------------------------------
-REGEL 12B — FORKORTELSER FORBUDT
-# ------------------------------------------------------------
-TTS staver forkortelser som enkeltstående bogstaver. Brug ALDRIG disse:
-
-  SKRIV ALDRIG   SKRIV ALTID
-  ───────────────────────────
-  kr.          → kroner
-  pr.          → per
-  stk.         → styk
-  g            → gram        ← KRITISK: "150 g" → "150 gram" (se REGEL 13)
-  cm           → centimeter  ← KRITISK: se REGEL 13
-  kg           → kilo
-  alm.         → almindelig
-  ca.          → cirka
-  bl.a.        → blandt andet
-  inkl.        → inklusive
-  ekskl.       → eksklusive
-  tlf.         → telefonnummer
-  nr.          → nummer
-  L            → liter
-  cl           → centiliter
-
-  Forkert: "De koster ni kr. pr. stk."
-  Korrekt: "De koster ni kroner per styk."
-
-# ------------------------------------------------------------
 REGEL 13 — MÅL OG ENHEDER (tal+enhed læses på engelsk af TTS)
 # ------------------------------------------------------------
 Når menuen indeholder tal med enheder, SKAL du skrive dem som fulde danske ord.
@@ -259,178 +129,81 @@ EKSEMPEL:
 - SPROG: Udelukkende dansk. Skift aldrig til engelsk, svensk eller norsk.
   Hvis kunden bruger fremmede ord, fortsætter du på dansk.
 
-## UDTALE-NORMALISERING (Layer 2 reference — synkroniseret med REGEL 12)
-# Denne sektion er et hurtigt opslagsværk. REGEL 12 i Layer 1 er autoriteten.
-# Alle former herunder er identiske med REGEL 12 — ingen konflikter.
-
-# SEKTION A — ITALIENSK & FREMMED
-  Margherita          → margerita
-  Bresaola            → bresola
-  Mascarpone          → maskarpåne
-  Mozzarella          → motsarella
-  Gorgonzola          → gorgonsola
-  Rucola              → rukola
-  Parmesanost         → parmesaanost
-  Parmesan            → parmesaan
-  Parmaskinke         → parmaskinke
-  Gran Biraghi        → gran biragi
-  Basilikumspesto     → basilikumspesto
-  Pepperoni           → pepperroni
-  Pastrami            → pastrami
-  Penne               → penne
-  Spaghetti           → spaghetti
-  Prosciutto          → prosjutto
-  Focaccia            → fokattsja
-  Focacciabolle       → fokattsjabolle
-  Quattro Stagioni    → kvattro stasjoni
-  Funghi              → fungi
-  Calzone             → kaltsone
-  Diavola             → djavola
-  Falafel             → falaffel
-  Aioli               → ajoli
-  Avokado             → avokado
-  Guacamole           → gvakamole
-  Chorizo             → tjorisso
-  Jalapeños           → halapenyos
-  Champignon          → sjampinjong
-  Champignoner        → sjampinjonger
-
-# SEKTION B — FRANSKE SAUCER & DRESSINGER
-  Bearnaisesovs       → bearnæsesovs
-  Bearnaisesauce      → bearnæsesovs
-  Remoulade           → remoulade
-  Creme fraiche       → kremfresh
-  Mayonnaise          → majonnæse
-  Salatmayonnaise     → salatmajonnæse
-  Vinaigrette         → vinægrette
-
-# SEKTION C — ENGELSKE VARENAVNE
-  Chicken Nuggets     → tjikken naggets
-  Pops Snackboks      → pops snakboks
-  BBQ                 → bibi kjuh
-  Hotwings            → hotvings
-  Icebergsalat        → ajsbergsalat
-  Cherrytomater       → tjerrytomater
-  Babymajs            → babymajs
-  Babyspinat          → babyspinat
-  Burger              → borger
-  Bacon               → bæjkon
-  Cheddar             → sjeddar
-  Coleslaw            → kålslå
-  Caesar              → seeser
-  Croutoner           → krutoner
-  Onion Rings         → ånjonrings
-  Milkshake           → milksjæjk
-  Sandwich            → sændvitsj
-  Rancher             → rantsjer
-  Sprite              → spræjt
-  Coca-Cola           → koka kola
-  Cola Zero           → kola siro
-  Veggie              → vedsji
-  De Luxe             → de lyks
-  Crispy              → krispi
-  Mushroom            → masjrum
-  Chilimayo           → tjilimajo
-  Pommes Frites       → pomfrit
-
-# SEKTION D — DANSKE SAMMENSÆTNINGER
-  Fiskefilet          → fiskefilæ
-  Hjemmelavet         → hjemmelavet
-  Hvidløgsdressing    → hvidløgsdresing
-  Hvidløgssolie       → hvidløgsolie
-  Trøffelflødesauce   → trøffelflødesovs
-  Trøffelolie         → trøffelolie
-  Tomatflødesauce     → tomatflødesovs
-  Basilikumsflødesauce → basilikumsflødesovs
-  Bådekartofler       → bådekartofler
-  Vildmosekartofler   → vildmosekartofler
-  Kødboller           → kødboller
-  Halvgrill           → halvgril
-  Peberfrugt          → peberfrugt
-  Kyllingenuggets     → kyllingnaggetz
-
-# SEKTION E — FORKORTELSER & ENHEDER
-  pr.   → per         stk.  → styk        kr.   → kroner
-  g     → gram        cm    → centimeter  kg    → kilo
-  alm.  → almindelig  ca.   → cirka       inkl. → inklusive
-  tlf.  → telefonnummer  nr. → nummer     L     → liter
-
-
 ## INTELLIGENT LYDFORSTÅELSE (FUZZY MATCHING)
-# STT-fejl — identificer og ret mentalt, brug fonetisk form i output
+# STT-fejl — identificer og ret mentalt, brug naturlig form i output (middleware håndterer fonetik)
 
   # --- Generelle ord ---
   "skin" / "skidt"                              → skinke
-  "mark rita" / "margit"                        → margerita
-  "champagne" / "sjampanje"                     → sjampinjong
+  "mark rita" / "margit"                        → margherita
+  "champagne" / "sjampanje"                     → champignon
   "løb" / "løv"                                 → løg
-  "pepper" / "peppe" / "peperoni"               → pepperroni
-  "coke" / "cock"                               → kola
+  "pepper" / "peppe" / "peperoni"               → pepperoni
+  "coke" / "cock"                               → coca-cola
   "shawarma" / "shaw" / "charma" / "kabab"      → kebab
   "vend" / "van" / "band"                       → vand
   "øksekød" / "oksekøb"                         → oksekød
   "killing" (i mad-kontekst)                    → kylling
 
   # --- Saucer & Dressinger ---
-  "bernaise" / "bearnæse" / "bearnes"           → bearnæsesovs
-  "krem fresh" / "krem fraiche" / "fraisj"      → kremfresh
-  "ayoli" / "a oli" / "ali"                     → ajoli
+  "bernaise" / "bearnæse" / "bearnes"           → bearnaise
+  "krem fresh" / "krem fraiche" / "fraisj"      → creme fraiche
+  "ayoli" / "a oli" / "ali"                     → aioli
   "remolade" / "remullade"                      → remoulade
-  "mayo" / "majonæse"                           → majonnæse
+  "mayo" / "majonæse"                           → mayonnaise
 
   # --- Italienske ingredienser ---
-  "mozarella" / "mosa rela" / "mozza"           → motsarella
-  "mascarponi" / "masca pone"                   → maskarpåne
-  "gorgon" / "gorgon zola" / "gorgotsola"       → gorgonsola
-  "ruko la" / "rugola" / "rakola"               → rukola
-  "bresola" / "brisola" / "breasola"            → bresola
+  "mozarella" / "mosa rela" / "mozza"           → mozzarella
+  "mascarponi" / "masca pone"                   → mascarpone
+  "gorgon" / "gorgon zola" / "gorgotsola"       → gorgonzola
+  "ruko la" / "rugola" / "rakola"               → rucola
+  "bresola" / "brisola" / "breasola"            → bresaola
   "pastrame" / "pastramy"                       → pastrami
-  "parmesan" / "parmasan"                       → parmesaanost
-  "gran baragi" / "gran biragi"                 → gran biragi
+  "parmesan" / "parmasan"                       → parmesan
+  "gran baragi" / "gran biragi"                 → gran biraghi
   "pesto" (alene, uden kontekst)                → basilikumspesto
   "penn" / "pene" / "penner"                    → penne
   "spageti" / "spagheti"                        → spaghetti
-  "prosjutto" / "proshutto" / "proscuitto"      → prosjutto
-  "fokatja" / "fokacja" / "foccacia"            → fokattsja
-  "kaltzone" / "kalzone"                        → kaltsone
-  "kvatro" / "quattro"                          → kvattro stasjoni
-  "fungi" / "funghi" / "svampe-pizza"           → fungi
+  "prosjutto" / "proshutto" / "proscuitto"      → prosciutto
+  "fokatja" / "fokacja" / "foccacia"            → focaccia
+  "kaltzone" / "kalzone"                        → calzone
+  "kvatro" / "quattro"                          → quattro stagioni
+  "fungi" / "funghi" / "svampe-pizza"           → funghi
 
   # --- Spansk / Mexicansk ---
-  "choriso" / "cherizo" / "tjoreso"             → tjorisso
-  "jalapino" / "jala penios" / "halapeno"       → halapenyos
+  "choriso" / "cherizo" / "tjoreso"             → chorizo
+  "jalapino" / "jala penios" / "halapeno"       → jalapeños
   "avocado" / "avokato" / "avocato"             → avokado
-  "gwakamole" / "guaka" / "wakamole"            → gvakamole
+  "gwakamole" / "guaka" / "wakamole"            → guacamole
 
   # --- Burger Palace specifikt ---
-  "delux" / "de lux" / "de lyks"               → de lyks
-  "vegi" / "veggie" / "vege"                    → vedsji
-  "bæjkon" / "beikon"                           → bæjkon
-  "sjeddar" / "chedar" / "cedar"                → sjeddar
-  "kålslå" / "cole slaw" / "kolslå"             → kålslå
-  "sesar" / "sisar" / "keesar"                  → seeser
-  "krutoner" / "croutons"                       → krutoner
-  "ånjon" / "onion" / "løgringe"                → ånjonrings
-  "shake" / "milksjæjk"                         → milksjæjk
-  "siro" / "zero" / "diet cola"                 → kola siro
-  "spræjt" / "spreit"                           → spræjt
-  "masjrum" / "mushroom" / "svampe"             → masjrum
-  "fokatsjabolle" / "focacciabolle"             → fokattsjabolle
-  "tjilimajo" / "chili mayo" / "chilisauce"     → tjilimajo
-  "sændvitsj" / "sandvich" / "sandvitj"         → sændvitsj
+  "delux" / "de lux" / "de lyks"               → de luxe
+  "vegi" / "veggie" / "vege"                    → veggie
+  "bæjkon" / "beikon"                           → bacon
+  "sjeddar" / "chedar" / "cedar"                → cheddar
+  "kålslå" / "cole slaw" / "kolslå"             → coleslaw
+  "sesar" / "sisar" / "keesar"                  → caesar
+  "krutoner" / "croutons"                       → croutoner
+  "ånjon" / "onion" / "løgringe"                → onion rings
+  "shake" / "milksjæjk"                         → milkshake
+  "siro" / "zero" / "diet cola"                 → cola zero
+  "spræjt" / "spreit"                           → sprite
+  "masjrum" / "mushroom" / "svampe"             → mushroom
+  "fokatsjabolle" / "focacciabolle"             → focacciabolle
+  "tjilimajo" / "chili mayo" / "chilisauce"     → chilimayo
+  "sændvitsj" / "sandvich" / "sandvitj"         → sandwich
 
   # --- Pops Pizza specifikt ---
-  "snackbox" / "snack box" / "snackbocks"       → pops snakboks
-  "hot wings" / "hotvings" / "hotwing"          → hotvings
-  "ice berg" / "iseberg"                        → ajsbergsalat
-  "nugget" / "nagets" / "naget"                 → tjikken naggets
-  "fish fillet" / "fiskefil"                    → fiskefilæ
-  "falafel" / "falafler" / "falafl"             → falaffel
+  "snackbox" / "snack box" / "snackbocks"       → pops snackboks
+  "hot wings" / "hotvings" / "hotwing"          → hotwings
+  "ice berg" / "iseberg"                        → icebergsalat
+  "nugget" / "nagets" / "naget"                 → chicken nuggets
+  "fish fillet" / "fiskefil"                    → fiskefilet
+  "falafel" / "falafler" / "falafl"             → falafel
 
   # --- Pommes frites (menu-kontekst-bevidst) ---
   "pomfritter" / "pommes" / "fritter" / "pomfrit" / "french fries" / "frites":
     → Tjek Layer 4 MENUDATA:
-      Hvis "Pommes Frites" findes i menuen  → bekræft og noter som "pomfrit"
+      Hvis "Pommes Frites" findes i menuen  → bekræft og noter som "pommes frites"
       Hvis "Pommes Frites" IKKE er i menuen → sig: "Vi har ikke pommes frites,
         men jeg kan foreslå [nærmeste alternativ fra Layer 4]"
 
@@ -439,7 +212,7 @@ EKSEMPEL:
   "dürüm" / "kebabmenu"   → ikke på menuen. Spørg om pizza med kebab-fyld.
 
 Navne under 5 bogstaver → læs altid tilbage: "Hedder du [navn] — er det rigtigt?"
-Brug altid fonetisk form direkte. Sig ALDRIG "vi har ikke [kundens ord]".
+Brug altid naturlig stavemåde direkte. Sig ALDRIG "vi har ikke [kundens ord]".
 
 ## FRAGMENT-RECOVERY
 Hvis STT klipper en sætning, sig ALDRIG "Jeg forstod ikke".
