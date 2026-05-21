@@ -36,7 +36,7 @@ async def start_call(
     try:
         timeout = httpx.Timeout(
             connect=30.0,
-            read=120.0,
+            read=300.0,
             write=30.0,
             pool=30.0
         )
