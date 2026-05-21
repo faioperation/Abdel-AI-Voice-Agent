@@ -81,13 +81,20 @@ async def attach_tool_to_assistant(assistant_id: str, tool_id: str, current_mode
     existing_tool_ids = current_model.get("toolIds", [])
     if tool_id not in existing_tool_ids:
         existing_tool_ids.append(tool_id)
+    from .config import BACKEND_URL, VAPI_SECRET
+    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+
     patch_payload = {
         "model": {
-            "provider": "openai",
+            "provider": "custom-llm",
             "model": "gpt-4o",
+            "url": f"{clean_backend_url}/api/chat/completions",
             "messages": current_model.get("messages", []),
             "toolIds": existing_tool_ids,
-            "temperature": 0.3
+            "temperature": 0.3,
+            "headers": {
+                "x-vapi-secret": VAPI_SECRET
+            }
         }
     }
     async with httpx.AsyncClient(timeout=20) as client:
