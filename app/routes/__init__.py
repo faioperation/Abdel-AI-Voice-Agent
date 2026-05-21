@@ -5,3 +5,4 @@ from .chat import router as chat_router
 from .telephony import router as telephony_router
 from .billing import router as billing_router
 from .orders import router as orders_router
+from .custom_llm import router as custom_llm_router
