@@ -6,6 +6,7 @@ load_dotenv()
 # Vapi & OpenAI
 VAPI_API_KEY = os.getenv("VAPI_API_KEY")
 VAPI_PUBLIC_KEY = os.getenv("VAPI_PUBLIC_KEY", "")
+VAPI_SECRET = os.getenv("VAPI_SECRET", "my-vapi-secret-key") # Default for dev
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # Admin auth
