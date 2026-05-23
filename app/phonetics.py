@@ -6,6 +6,12 @@ DANISH_PHONEME_DICT = {
     "kebab": "kebæb",                 # Forces the correct flat Danish vowel
     "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
     "champignon": "sjampinjon",
+    "pepperonipizzaen": "peperoniipizzaen", # Stress on "ni"
+    "peperonipizzaen": "peperoniipizzaen",
+    "pepperonipizza": "peperoniipizza",
+    "peperonipizza": "peperoniipizza",
+    "pepperoni": "peperonii",
+    "peperoni": "peperonii",
 
     # Abbreviation expansions
     "kr.": "kroner", "kr": "kroner",
