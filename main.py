@@ -1,16 +1,30 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
 import uvicorn
 from fastapi.staticfiles import StaticFiles
-from app.routes import auth_router, assistants_router, calls_router, chat_router, telephony_router, billing_router, orders_router, custom_llm_router
+from app.routes import (
+    auth_router, assistants_router, calls_router, chat_router,
+    telephony_router, billing_router, orders_router, custom_llm_router,
+)
 from app.database import init_db
-
-# Removed init_db() from global scope to prevent Vercel build timeouts
-
+from app import http_client
 import os
 
-app = FastAPI(title="Pizzeria Network AI Dashboard")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ── Startup ──────────────────────────────────────────────────────
+    init_db()
+    await http_client.startup()
+    yield
+    # ── Shutdown ─────────────────────────────────────────────────────
+    await http_client.shutdown()
+
+
+app = FastAPI(title="Pizzeria Network AI Dashboard", lifespan=lifespan)
+
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -18,7 +32,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
-    allow_headers=["*"],)
+    allow_headers=["*"],
+)
 
 app.include_router(auth_router)
 app.include_router(assistants_router)
@@ -30,6 +45,7 @@ app.include_router(orders_router)
 app.include_router(custom_llm_router)
 
 from fastapi.responses import HTMLResponse
+
 @app.get("/", response_class=HTMLResponse)
 def dashboard():
     return Path("templates/index.html").read_text(encoding="utf-8")
