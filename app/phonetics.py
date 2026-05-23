@@ -1,144 +1,166 @@
 import re
 
 DANISH_PHONEME_DICT = {
-    # REGEL 12 - ITALIENSK / FREMMED
-    "mascarpone": "maskarpåne",
-    "mozzarella": "motsarella",
-    "gorgonzola": "gorgonsola",
-    "parmesanost": "parmesaanost",
-    "parmesan": "parmesaan",
-    "margherita": "margerita",
-    "bresaola": "bresola",
-    "prosciutto": "prosjutto",
-    "focacciabolle": "fokattsjabolle",
-    "focaccia": "fokattsja",
-    "quattro stagioni": "kvattro stasjoni",
-    "funghi": "fungi",
-    "calzone": "kaltsone",
-    "diavola": "djavola",
-    "pepperoni": "pepperroni",
-    "pastrami": "pastrami",
-    "penne": "penne",
-    "spaghetti": "spaghetti",
+    # Pronunciation fixes requested by client
+    "pommes frites": "pomfritter",
+    "kebab": "kebæb",                 # Forces the correct flat Danish vowel
+    "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
+    "champignon": "sjampinjon",
 
-    # SPANSK / MEXICANSK
-    "jalapeños": "halapenyos",
-    "jalapeño": "halapenyo",
-    "chorizo": "tjorisso",
-    "guacamole": "gvakamole",
-    "salsa": "salsa",
-
-    # FRANSK
-    "bearnaisesovs": "bearnæsesovs",
-    "bearnaisesauce": "bearnæsesovs",
-    "bearnaise": "bearnæse",
-    "creme fraiche": "kremfresh",
-    "vinaigrette": "vinægrette",
-    "remoulade": "remoulade",
-    "salatmayonnaise": "salatmajonnæse",
-    "mayonnaise": "majonnæse",
-
-    # ENGELSK VARENAVN
-    "mushroom": "masjrum",
-    "chicken nuggets": "tjikken naggets",
-    "hotwings": "hotvings",
-    "snackboks": "snakboks",
-    "icebergsalat": "ajsbergsalat",
-    "cherrytomater": "tjerrytomater",
-    "burger": "borger",
-    "bacon": "bæjkon",
-    "cheddar": "sjeddar",
-    "coleslaw": "kålslå",
-    "caesar": "seeser",
-    "croutoner": "krutoner",
-    "onion rings": "ånjonrings",
-    "milkshakes": "milksjæjks",
-    "milkshake": "milksjæjk",
-    "sandwich": "sændvitsj",
-    "rancher": "rantsjer",
-    "sprite": "spræjt",
-    "coca-cola": "koka kola",
-    "cola zero": "kola siro",
-    "veggie": "vedsji",
-    "de luxe": "de lyks",
-    "crispy": "krispi",
-    "bbq": "bibi kjuh",
-    "chilimayo": "tjilimajo",
-    "chili": "tjili",
-
-    # DANSK/FREMMED BLANDET
-    "champignoner": "sjampinjonger",
-    "champignon": "sjampinjong",
-    "pommes frites": "pomfrit",
-    "falafel": "falaffel",
-    "aioli": "ajoli",
-    "avokado": "avokado",
-    "rucola": "rukola",
-    "fiskefilet": "fiskefilæ",
-    "trøffelflødesauce": "trøffelflødesovs",
-    "tomatflødesauce": "tomatflødesovs",
-    "basilikumsflødesauce": "basilikumsflødesovs",
-    "basilikumspesto": "basilikumspesto",
-    "hvidløgsdressing": "hvidløgsdresing",
-    "gran biraghi": "gran biragi",
-    "parmaskinke": "parmaskinke",
-    "hjemmelavet": "hjemmelavet",
-    "hvidløgssolie": "hvidløgsolie",
-    "trøffelolie": "trøffelolie",
-    "bådekartofler": "bådekartofler",
-    "vildmosekartofler": "vildmosekartofler",
-    "kødboller": "kødboller",
-    "halvgrill": "halvgril",
-    "peberfrugt": "peberfrugt",
-    "kyllingenuggets": "kyllingnaggetz",
-
-    # REGEL 12B - FORKORTELSER FORBUDT
-    "kr.": "kroner",
-    "pr.": "per",
-    "stk.": "styk",
-    "alm.": "almindelig",
-    "ca.": "cirka",
+    # Abbreviation expansions
+    "kr.": "kroner", "kr": "kroner",
+    "pr.": "per", "pr": "per",
+    "stk.": "styk", "stk": "styk",
+    "alm.": "almindelig", "alm": "almindelig",
+    "ca.": "cirka", "ca": "cirka",
     "bl.a.": "blandt andet",
-    "inkl.": "inklusive",
-    "ekskl.": "eksklusive",
-    "tlf.": "telefonnummer",
-    "nr.": "nummer",
-    " cl ": " centiliter ",
-    " l ": " liter ",
-    " cm ": " centimeter ",
-    " kg ": " kilo ",
-    " g ": " gram ",
+    "inkl.": "inklusive", "inkl": "inklusive",
+    "ekskl.": "eksklusive", "ekskl": "eksklusive",
+    "tlf.": "telefonnummer", "tlf": "telefonnummer",
+    "nr.": "nummer", "nr": "nummer",
 }
 
-# ── Pre-compile all patterns once at module load ──────────────────────────────
-# Sort longest-first so compound words match before their substrings.
-# Compiling here instead of inside apply_phonemes() saves ~0.012ms per call —
-# negligible alone but adds up across hundreds of streaming token chunks per call.
-_COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = []
+# Unit Map for Number+Unit normalization
+UNIT_MAP = {
+    "g": "gram",
+    "kg": "kilo",
+    "cl": "centiliter",
+    "l": "liter",
+    "cm": "centimeter",
+    "kr": "kroner",
+    "kr.": "kroner",
+    "stk": "styk",
+    "stk.": "styk",
+}
 
+# Pre-compile the phonetic dictionary patterns
+_COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = []
 for _word in sorted(DANISH_PHONEME_DICT.keys(), key=len, reverse=True):
     _replacement = DANISH_PHONEME_DICT[_word]
-    if _word.startswith(" ") and _word.endswith(" "):
-        # Unit abbreviations like " g " — match exact spacing
-        _compiled_patterns_entry = (
-            re.compile(re.escape(_word), flags=re.IGNORECASE),
-            _replacement,
-        )
-    else:
-        _compiled_patterns_entry = (
-            re.compile(r"\b" + re.escape(_word) + r"\b", flags=re.IGNORECASE),
-            _replacement,
-        )
+    _compiled_patterns_entry = (
+        re.compile(r"\b" + re.escape(_word) + r"\b", flags=re.IGNORECASE),
+        _replacement,
+    )
     _COMPILED_PATTERNS.append(_compiled_patterns_entry)
+
+# Pre-compile number normalizer regexes
+# 1. Matches digits (including decimals) followed optionally by whitespace and a unit (e.g. 150g, 30 cm, 0,5L)
+_RE_NUM_UNIT = re.compile(r"\b(\d+[\.,]\d+|\d+)\s*(g|kg|cl|l|cm|kr\.?|stk\.?)\b", flags=re.IGNORECASE)
+
+# 2. Matches standalone decimals (e.g. 0,5 or 0.33)
+_RE_DECIMAL = re.compile(r"\b(\d+)([\.,])(\d+)\b")
+
+# 3. Matches standalone integers
+_RE_INTEGER = re.compile(r"\b\d+\b")
+
+
+def num_to_danish_words(n: int) -> str:
+    """Converts an integer from 0 to 9999 to its Danish word equivalent."""
+    if n == 0:
+        return "nul"
+
+    ones = ["", "en", "to", "tre", "fire", "fem", "seks", "syv", "otte", "ni",
+            "ti", "elleve", "tolv", "tretten", "fjorten", "femten", "seksten",
+            "sytten", "atten", "nitten"]
+
+    tens = ["", "", "tyve", "tredive", "fyrre", "halvtreds", "tres", "halvfjerds", "firs", "halvfems"]
+
+    def _under_100(val: int) -> str:
+        if val < 20:
+            return ones[val]
+        t = val // 10
+        o = val % 10
+        if o == 0:
+            return tens[t]
+        o_str = "en" if o == 1 else ones[o]
+        return f"{o_str}og{tens[t]}"
+
+    if n < 100:
+        return _under_100(n)
+
+    if n < 1000:
+        h = n // 100
+        rem = n % 100
+        h_str = "hundrede" if h == 1 else f"{ones[h]} hundrede"
+        if rem == 0:
+            return h_str
+        return f"{h_str} og {_under_100(rem)}"
+
+    if n < 10000:
+        th = n // 1000
+        rem = n % 1000
+        th_str = "tusind" if th == 1 else f"{ones[th]} tusind"
+        if rem == 0:
+            return th_str
+        if rem < 100:
+            return f"{th_str} og {_under_100(rem)}"
+        return f"{th_str} {num_to_danish_words(rem)}"
+
+    return str(n)
+
+
+def integer_to_danish_words(num_str: str) -> str:
+    """Converts a string of digits to Danish words, handling long numbers as digit-by-digit."""
+    if len(num_str) >= 5:
+        digit_names = ["nul", "en", "to", "tre", "fire", "fem", "seks", "syv", "otte", "ni"]
+        return " ".join(digit_names[int(d)] for d in num_str)
+    return num_to_danish_words(int(num_str))
+
+
+def normalize_number_unit(match: re.Match) -> str:
+    """Callback to normalize matched number+unit pairs to Danish words."""
+    num_part = match.group(1)
+    unit_part = match.group(2).lower()
+
+    if "." in num_part or "," in num_part:
+        # Decimal number
+        num_part = num_part.replace(",", ".")
+        parts = num_part.split(".")
+        whole = parts[0]
+        decimal = parts[1]
+        digit_names = ["nul", "en", "to", "tre", "fire", "fem", "seks", "syv", "otte", "ni"]
+        whole_words = integer_to_danish_words(whole)
+        decimal_words = " ".join(digit_names[int(d)] for d in decimal)
+        num_words = f"{whole_words} komma {decimal_words}"
+    else:
+        num_words = integer_to_danish_words(num_part)
+
+    unit_words = UNIT_MAP.get(unit_part, UNIT_MAP.get(unit_part + ".", unit_part))
+    if unit_words == "styk" and num_words == "en":
+        num_words = "et"
+    return f"{num_words} {unit_words}"
+
+
+def normalize_decimal(match: re.Match) -> str:
+    """Callback to normalize standalone decimals to Danish words."""
+    whole = match.group(1)
+    decimal = match.group(3)
+    digit_names = ["nul", "en", "to", "tre", "fire", "fem", "seks", "syv", "otte", "ni"]
+    whole_words = integer_to_danish_words(whole)
+    decimal_words = " ".join(digit_names[int(d)] for d in decimal)
+    return f"{whole_words} komma {decimal_words}"
+
+
+def normalize_integer(match: re.Match) -> str:
+    """Callback to normalize standalone integers to Danish words."""
+    return integer_to_danish_words(match.group(0))
 
 
 def apply_phonemes(text: str) -> str:
     """
-    Applies phonetic plain-text substitution to the given string.
-    Patterns are pre-compiled at module load; this function is just substitution.
+    Applies number normalization and phonetic plain-text substitution to the given string.
     """
-    # Pad with spaces so unit abbreviations like " g " match at string edges
-    padded = f" {text} "
+    # 1. Normalize numbers with units first (e.g. 150g, 30 cm)
+    text = _RE_NUM_UNIT.sub(normalize_number_unit, text)
+
+    # 2. Normalize standalone decimals (e.g. 0,5)
+    text = _RE_DECIMAL.sub(normalize_decimal, text)
+
+    # 3. Normalize standalone integers (e.g. 2, 3)
+    text = _RE_INTEGER.sub(normalize_integer, text)
+
+    # 4. Apply general phonetic / abbreviation substitutions
     for pattern, replacement in _COMPILED_PATTERNS:
-        padded = pattern.sub(replacement, padded)
-    return padded[1:-1]
+        text = pattern.sub(replacement, text)
+
+    return text
