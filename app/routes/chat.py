@@ -1,5 +1,6 @@
 import json
 import httpx
+from app import http_client
 from datetime import datetime, timedelta
 from fastapi import APIRouter, Request, Depends
 from sqlalchemy.orm import Session
@@ -177,15 +178,18 @@ async def chat_with_agent(
                 "temperature": 0.5
             }
 
-            async with httpx.AsyncClient(timeout=30) as client:
+            try:
+                client = http_client.get_openai_client()
                 resp = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
+                    "/v1/chat/completions",
                     json=payload,
                     headers={
                         "Authorization": f"Bearer {OPENAI_API_KEY}",
                         "Content-Type": "application/json"
                     }
                 )
+            except httpx.ReadTimeout:
+                return {"response": "Error: OpenAI took too long to respond. Please try again."}
 
             if resp.status_code != 200:
                 print(f"[CHAT] OpenAI Error: {resp.text}")
