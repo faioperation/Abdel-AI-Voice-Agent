@@ -203,7 +203,7 @@ EKSEMPEL:
   # --- Pommes frites (menu-kontekst-bevidst) ---
   "pomfritter" / "pommes" / "fritter" / "pomfrit" / "french fries" / "frites":
     → Tjek Layer 4 MENUDATA:
-      Hvis "Pommes Frites" findes i menuen  → bekræft og noter som "pommes frites"
+      Hvis "Pommes Frites" findes i menuen  → bekræft og udtal som "pomfritter" (og noter som "pommes frites" i save_order)
       Hvis "Pommes Frites" IKKE er i menuen → sig: "Vi har ikke pommes frites,
         men jeg kan foreslå [nærmeste alternativ fra Layer 4]"
 
