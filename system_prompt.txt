@@ -158,7 +158,7 @@ EKSEMPEL:
   "ruko la" / "rugola" / "rakola"               → rucola
   "bresola" / "brisola" / "breasola"            → bresaola
   "pastrame" / "pastramy"                       → pastrami
-  "parmesan" / "parmasan"                       → parmesan
+  "parmesan" / "parmasan" / "parmanost" / "paramasanost" / "parmasanost" → parmesanost / parmesan
   "gran baragi" / "gran biragi"                 → gran biraghi
   "pesto" (alene, uden kontekst)                → basilikumspesto
   "penn" / "pene" / "penner"                    → penne
@@ -186,7 +186,7 @@ EKSEMPEL:
   "ånjon" / "onion" / "løgringe"                → onion rings
   "shake" / "milksjæjk"                         → milkshake
   "siro" / "zero" / "diet cola"                 → cola zero
-  "spræjt" / "spreit"                           → sprite
+  "sprit" / "spræjt" / "spreit"                         → sprite
   "masjrum" / "mushroom" / "svampe"             → mushroom
   "fokatsjabolle" / "focacciabolle"             → focacciabolle
   "tjilimajo" / "chili mayo" / "chilisauce"     → chilimayo
