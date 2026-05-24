@@ -59,6 +59,13 @@ _RE_DECIMAL = re.compile(r"\b(\d+)([\.,])(\d+)\b")
 # 3. Matches standalone integers
 _RE_INTEGER = re.compile(r"\b\d+\b")
 
+# Master regex to quickly check if the text contains digits or any word from the Danish phonetic dictionary
+_PHONETIC_KEYS_OR_DIGIT = re.compile(
+    r"\d|" + "|".join(r"\b" + re.escape(_word) + r"\b" for _word in DANISH_PHONEME_DICT.keys()),
+    flags=re.IGNORECASE,
+)
+
+
 
 def num_to_danish_words(n: int) -> str:
     """Converts an integer from 0 to 9999 to its Danish word equivalent."""
@@ -156,6 +163,10 @@ def apply_phonemes(text: str) -> str:
     """
     Applies number normalization and phonetic plain-text substitution to the given string.
     """
+    # Fast-path: if the text doesn't contain any digits or phonetic dictionary words, return immediately
+    if not _PHONETIC_KEYS_OR_DIGIT.search(text):
+        return text
+
     # 1. Normalize numbers with units first (e.g. 150g, 30 cm)
     text = _RE_NUM_UNIT.sub(normalize_number_unit, text)
 
