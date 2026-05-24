@@ -134,7 +134,7 @@ async def create_assistant(
         "backgroundDenoisingEnabled": True,
         "startSpeakingPlan": {
             "waitSeconds": 0.1,
-            "smartEndpointingEnabled": True,
+            "smartEndpointingEnabled": False,
             "smartEndpointingPlan": {
                 "provider": "vapi"
             }
@@ -705,7 +705,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "backgroundDenoisingEnabled": True,
                     "startSpeakingPlan": {
                         "waitSeconds": 0.1,
-                        "smartEndpointingEnabled": True,
+                        "smartEndpointingEnabled": False,
                         "smartEndpointingPlan": {
                             "provider": "vapi"
                         }
