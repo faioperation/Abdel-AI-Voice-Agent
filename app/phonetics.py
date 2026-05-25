@@ -6,12 +6,23 @@ DANISH_PHONEME_DICT = {
     "kebab": "kebæb",                 # Forces the correct flat Danish vowel
     "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
     "champignon": "sjampinjon",
-    "pepperonipizzaen": "peperoniipizzaen", # Stress on "ni"
-    "peperonipizzaen": "peperoniipizzaen",
-    "pepperonipizza": "peperoniipizza",
-    "peperonipizza": "peperoniipizza",
-    "pepperoni": "peperonii",
-    "peperoni": "peperonii",
+
+    # Soft "b" sound for pepperoni
+    "pepperonipizzaen": "peberoniipizzaen",
+    "peperonipizzaen": "peberoniipizzaen",
+    "pepperonipizza": "peberoniipizza",
+    "peperonipizza": "peberoniipizza",
+    "pepperoni": "peberonii",
+    "peperoni": "peberonii",
+
+    # Silent "t" and soft suffix for fiskefilet
+    "fiskefilet": "fiskefilej",
+    "fiskefileter": "fiskefilejer",
+    "fiskefileten": "fiskefilejen",
+
+    # Brand name streaming normalization
+    "foodvoice.ai": "FoodVoice punktum A I",
+    "foodvoice.dk": "FoodVoice punktum D K",
 
     # Abbreviation expansions
     "kr.": "kroner", "kr": "kroner",
