@@ -87,7 +87,7 @@ async def attach_tool_to_assistant(assistant_id: str, tool_id: str, current_mode
     patch_payload = {
         "model": {
             "provider": "custom-llm",
-            "model": "gpt-4o",
+            "model": "gpt-4o-mini",
             "url": f"{clean_backend_url}/api/chat/completions",
             "messages": current_model.get("messages", []),
             "toolIds": existing_tool_ids,
