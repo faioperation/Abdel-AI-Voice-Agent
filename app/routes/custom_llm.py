@@ -2,6 +2,7 @@ import json
 import copy
 import logging
 import httpx
+import re
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse, JSONResponse
 from app.config import OPENAI_API_KEY, VAPI_SECRET
@@ -10,6 +11,108 @@ from app import http_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+_FUZZY_MAP = {
+    # Coke Zero variants (must be defined first/longer to match before coke/zero)
+    "coke zero": "coca-cola zero",
+    "coca cola zero": "coca-cola zero",
+    "coca-cola zero": "coca-cola zero",
+    "cola zero": "coca-cola zero",
+
+    # General
+    "skin": "skinke", "skidt": "skinke",
+    "mark rita": "margherita", "margit": "margherita",
+    "champagne": "champignon", "sjampanje": "champignon",
+    "løb": "løg", "løv": "løg",
+    "pepper": "pepperoni", "peppe": "pepperoni", "peperoni": "pepperoni",
+    "coke": "coca-cola", "cock": "coca-cola",
+    "shawarma": "kebab", "shaw": "kebab", "charma": "kebab", "kabab": "kebab",
+    "vend": "vand", "van": "vand", "band": "vand",
+    "øksekød": "oksekød", "oksekøb": "oksekød",
+    "killing": "kylling",
+
+    # Sauces & Dressings
+    "bernaise": "bearnaise", "bearnæse": "bearnaise", "bearnes": "bearnaise",
+    "krem fresh": "creme fraiche", "krem fraiche": "creme fraiche", "fraisj": "creme fraiche",
+    "ayoli": "aioli", "a oli": "aioli", "ali": "aioli",
+    "remolade": "remoulade", "remullade": "remoulade",
+    "mayo": "mayonnaise", "majonæse": "mayonnaise",
+
+    # Italian ingredients
+    "mozarella": "mozzarella", "mosa rela": "mozzarella", "mozza": "mozzarella",
+    "mascarponi": "mascarpone", "masca pone": "mascarpone",
+    "gorgon": "gorgonzola", "gorgon zola": "gorgonzola", "gorgotsola": "gorgonzola",
+    "ruko la": "rucola", "rugola": "rucola", "rakola": "rucola",
+    "bresola": "bresaola", "brisola": "bresaola", "breasola": "bresaola",
+    "pastrame": "pastrami", "pastramy": "pastrami",
+    "parmesan": "parmesan", "parmasan": "parmesan", "parmanost": "parmesan",
+    "paramasanost": "parmesan", "parmasanost": "parmesan",
+    "gran baragi": "gran biraghi", "gran biragi": "gran biraghi",
+    "pesto": "basilikumspesto",
+    "penn": "penne", "pene": "penne", "penner": "penne",
+    "spageti": "spaghetti", "spagheti": "spaghetti",
+    "prosjutto": "prosciutto", "proshutto": "prosciutto", "proscuitto": "prosciutto",
+    "fokatja": "focaccia", "fokacja": "focaccia", "foccacia": "focaccia",
+    "kaltzone": "calzone", "kalzone": "calzone",
+    "kvatro": "quattro stagioni", "quattro": "quattro stagioni",
+    "fungi": "funghi", "funghi": "funghi", "svampe-pizza": "funghi",
+
+    # Spanish / Mexican
+    "choriso": "chorizo", "cherizo": "chorizo", "tjoreso": "chorizo",
+    "jalapino": "jalapeños", "jala penios": "jalapeños", "halapeno": "jalapeños",
+    "avocado": "avokado", "avokato": "avokado", "avocato": "avokado",
+    "gwakamole": "guacamole", "guaka": "guacamole", "wakamole": "guacamole",
+
+    # Burger Palace specific
+    "delux": "de luxe", "de lux": "de luxe", "de lyks": "de luxe",
+    "vegi": "veggie", "veggie": "veggie", "vege": "veggie",
+    "bæjkon": "bacon", "beikon": "bacon",
+    "sjeddar": "cheddar", "chedar": "cheddar", "cedar": "cheddar",
+    "kålslå": "coleslaw", "cole slaw": "coleslaw", "kolslå": "coleslaw",
+    "sesar": "caesar", "sisar": "caesar", "keesar": "caesar",
+    "krutoner": "croutoner", "croutons": "croutoner",
+    "ånjon": "onion rings", "onion": "onion rings", "løgringe": "onion rings",
+    "shake": "milkshake", "milksjæjk": "milkshake",
+    "siro": "cola zero", "zero": "cola zero", "diet cola": "cola zero",
+    "sprit": "sprite", "spræjt": "sprite", "spreit": "sprite",
+    "masjrum": "mushroom", "mushroom": "mushroom", "svampe": "mushroom",
+    "fokatsjabolle": "focacciabolle", "focacciabolle": "focacciabolle",
+    "tjilimajo": "chilimayo", "chili mayo": "chilimayo", "chilisauce": "chilimayo",
+    "sændvitsj": "sandwich", "sandvich": "sandwich", "sandvitj": "sandwich",
+
+    # Pops Pizza specific
+    "snackbox": "pops snackboks", "snack box": "pops snackboks", "snackbocks": "pops snackboks",
+    "hot wings": "hotwings", "hotvings": "hotwings", "hotwing": "hotwings",
+    "ice berg": "icebergsalat", "iseberg": "icebergsalat",
+    "nugget": "chicken nuggets", "nagets": "chicken nuggets", "naget": "chicken nuggets",
+    "fish fillet": "fiskefilet", "fiskefil": "fiskefilet",
+    "falafel": "falafel", "falafler": "falafel", "falafl": "falafel",
+
+    # Pommes frites
+    "pomfritter": "pommes frites", "pommes": "pommes frites", "fritter": "pommes frites",
+    "pomfrit": "pommes frites", "french fries": "pommes frites", "frites": "pommes frites",
+
+    # General non-menu
+    "lasagne": "lasagne", "lasagna": "lasagne",
+    "dürüm": "dürüm", "kebabmenu": "dürüm",
+}
+
+_SORTED_KEYS = sorted(_FUZZY_MAP.keys(), key=len, reverse=True)
+_MASTER_RE = re.compile(
+    r"\b(" + "|".join(re.escape(k) for k in _SORTED_KEYS) + r")\b",
+    re.IGNORECASE
+)
+
+def preprocess_user_message(text: str) -> str:
+    """Cleans common spelling/transcription errors in Danish speech before sending to LLM."""
+    if not text:
+        return text
+    
+    def _replacer(match):
+        matched_str = match.group(0).lower()
+        return _FUZZY_MAP.get(matched_str, match.group(0))
+        
+    return _MASTER_RE.sub(_replacer, text)
 
 # Characters at which we consider a word complete and safe to flush.
 # Flushing only at these boundaries guarantees apply_phonemes always
@@ -161,4 +264,21 @@ async def chat_completions(request: Request):
         return JSONResponse(status_code=401, content={"error": "Unauthorized"})
 
     payload = await request.json()
-    return StreamingResponse(stream_openai_response(payload), media_type="text/event-stream")
+
+    # Pre-process user message transcriptions to correct common STT spelling errors before LLM receives them
+    if "messages" in payload and isinstance(payload["messages"], list):
+        for msg in payload["messages"]:
+            if isinstance(msg, dict) and msg.get("role") == "user" and "content" in msg:
+                msg["content"] = preprocess_user_message(msg["content"])
+
+    return StreamingResponse(
+        stream_openai_response(payload),
+        media_type="text/event-stream",
+        headers={
+            "X-Accel-Buffering": "no",  # Disables buffering in Nginx
+            "Cache-Control": "no-cache, no-store, must-revalidate",  # Disables caching and CDN buffering
+            "Connection": "keep-alive",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
