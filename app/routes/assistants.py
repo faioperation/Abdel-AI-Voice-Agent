@@ -103,7 +103,7 @@ async def create_assistant(
         "language": "da"
     }
 
-    model = "gpt-4o-mini"
+    model = "gpt-4o"
     llm_provider = "openai"
 
     if BACKEND_URL:
@@ -347,7 +347,7 @@ async def add_files_to_assistant(
             patch_payload = {
                 "model": {
                     "provider": "custom-llm",
-                    "model": "gpt-4o-mini",
+                    "model": "gpt-4o",
                     "url": f"{clean_backend_url}/api/chat/completions",
                     "messages": updated_messages,
                     "toolIds": toolIds,
@@ -441,7 +441,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
         patch_payload["model"] = {
             "provider": "custom-llm",
-            "model": "gpt-4o-mini",
+            "model": "gpt-4o",
             "url": f"{clean_backend_url}/api/chat/completions",
             "messages": updated_messages,
             "toolIds": current_model.get("toolIds", []),
@@ -453,12 +453,12 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         assistant.system_prompt = data.system_prompt
 
     if data.model is not None:
-        assistant.model = "gpt-4o-mini"
+        assistant.model = "gpt-4o"
         if "model" not in patch_payload:
             clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
             patch_payload["model"] = {
                 "provider": "custom-llm",
-                "model": "gpt-4o-mini",
+                "model": "gpt-4o",
                 "url": f"{clean_backend_url}/api/chat/completions",
                 "messages": current_model.get("messages", []),
                 "toolIds": current_model.get("toolIds", []),
@@ -703,7 +703,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 patch_payload = {
                     "model": {
                         "provider": "custom-llm",
-                        "model": "gpt-4o-mini",
+                        "model": "gpt-4o",
                         "url": f"{clean_backend_url}/api/chat/completions",
                         "messages": [{"role": "system", "content": final_prompt}],
                         "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
