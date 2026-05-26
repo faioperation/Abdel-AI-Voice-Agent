@@ -151,6 +151,10 @@ async def create_assistant(
     if BACKEND_URL:
         clean_backend_url = BACKEND_URL.rstrip('/')
         assistant_payload["serverUrl"] = f"{clean_backend_url}/api/webhook/call"
+        assistant_payload["server"] = {
+            "url": f"{clean_backend_url}/api/webhook/call",
+            "timeoutSeconds": 20
+        }
 
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.post(f"{VAPI_BASE}/assistant", json=assistant_payload, headers=vapi_headers())
@@ -343,7 +347,7 @@ async def add_files_to_assistant(
             patch_payload = {
                 "model": {
                     "provider": "custom-llm",
-                    "model": "gpt-4o",
+                    "model": "gpt-4o-mini",
                     "url": f"{clean_backend_url}/api/chat/completions",
                     "messages": updated_messages,
                     "toolIds": toolIds,
@@ -353,6 +357,12 @@ async def add_files_to_assistant(
                     }
                 }
             }
+            if BACKEND_URL:
+                patch_payload["serverUrl"] = f"{clean_backend_url}/api/webhook/call"
+                patch_payload["server"] = {
+                    "url": f"{clean_backend_url}/api/webhook/call",
+                    "timeoutSeconds": 20
+                }
             assistant.system_prompt = new_prompt
             await client.patch(f"{VAPI_BASE}/assistant/{assistant_id}", json=patch_payload, headers=vapi_headers())
 
@@ -431,7 +441,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
         patch_payload["model"] = {
             "provider": "custom-llm",
-            "model": "gpt-4o",
+            "model": "gpt-4o-mini",
             "url": f"{clean_backend_url}/api/chat/completions",
             "messages": updated_messages,
             "toolIds": current_model.get("toolIds", []),
@@ -472,6 +482,13 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
 
 
     if patch_payload:
+        if BACKEND_URL:
+            clean_backend_url = BACKEND_URL.rstrip('/')
+            patch_payload["serverUrl"] = f"{clean_backend_url}/api/webhook/call"
+            patch_payload["server"] = {
+                "url": f"{clean_backend_url}/api/webhook/call",
+                "timeoutSeconds": 20
+            }
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.patch(f"{VAPI_BASE}/assistant/{assistant.id}", json=patch_payload, headers=vapi_headers())
         if resp.status_code not in (200, 201) and resp.status_code != 204:
@@ -718,6 +735,12 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "voice": current_voice
                 }
 
+                if BACKEND_URL:
+                    patch_payload["serverUrl"] = f"{clean_backend_url}/api/webhook/call"
+                    patch_payload["server"] = {
+                        "url": f"{clean_backend_url}/api/webhook/call",
+                        "timeoutSeconds": 20
+                    }
 
                 resp = await client.patch(
                     f"{VAPI_BASE}/assistant/{assistant_id}",
