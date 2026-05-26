@@ -171,7 +171,7 @@ async def chat_with_agent(
 
         for _ in range(MAX_TOOL_ROUNDS):
             payload = {
-                "model": assistant.model or "gpt-4o-mini",
+                "model": assistant.model or "gpt-4o",
                 "messages": messages,
                 "tools": tools,
                 "tool_choice": "auto",
