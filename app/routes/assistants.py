@@ -137,6 +137,11 @@ async def create_assistant(
             "smartEndpointingEnabled": False,
             "smartEndpointingPlan": {
                 "provider": "vapi"
+            },
+            "transcriptionEndpointingPlan": {
+                "onNumberSeconds": 0.4,
+                "onPunctuationSeconds": 0.1,
+                "onNoPunctuationSeconds": 0.6
             }
         },
         "stopSpeakingPlan": {
@@ -725,6 +730,11 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "smartEndpointingEnabled": False,
                         "smartEndpointingPlan": {
                             "provider": "vapi"
+                        },
+                        "transcriptionEndpointingPlan": {
+                            "onNumberSeconds": 0.4,
+                            "onPunctuationSeconds": 0.1,
+                            "onNoPunctuationSeconds": 0.6
                         }
                     },
                     "stopSpeakingPlan": {
