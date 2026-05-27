@@ -7,18 +7,21 @@ DANISH_PHONEME_DICT = {
     "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
     "champignon": "sjampinjon",
 
-    # Soft "b" sound for pepperoni
-    "pepperonipizzaen": "peberoniipizzaen",
-    "peperonipizzaen": "peberoniipizzaen",
-    "pepperonipizza": "peberoniipizza",
-    "peperonipizza": "peberoniipizza",
-    "pepperoni": "peberonii",
-    "peperoni": "peberonii",
+    # Stressed vowel suffix for pepperoni, preserving the P sound (not soft B)
+    "pepperonipizzaen": "pepperoniipizzaen",
+    "peperonipizzaen": "pepperoniipizzaen",
+    "pepperonipizza": "pepperoniipizza",
+    "peperonipizza": "pepperoniipizza",
+    "pepperoni": "pepperoniii",
+    "peperoni": "pepperoniii",
 
-    # Silent "t" and soft suffix for fiskefilet
-    "fiskefilet": "fiskefilej",
-    "fiskefileter": "fiskefilejer",
-    "fiskefileten": "fiskefilejen",
+    # Soft open-mid front vowel and silent 't' for fiskefilet/fiskefillet (pronounced like "fiske-fil-æ")
+    "fiskefilet": "fiskefilæ",
+    "fiskefillet": "fiskefilæ",
+    "fiskefileter": "fiskefilæer",
+    "fiskefilleter": "fiskefilæer",
+    "fiskefileten": "fiskefilæen",
+    "fiskefilleten": "fiskefilæen",
 
     # Brand name streaming normalization
     "foodvoice.ai": "FoodVoice punktum A I",
