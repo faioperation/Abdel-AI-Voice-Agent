@@ -120,6 +120,29 @@ def preprocess_user_message(text: str) -> str:
 # or "creme fraiche" must never be split mid-phrase.
 _BOUNDARY_CHARS = set(" .,?!;\n\r-:")
 
+_MULTI_WORD_FIRST_PARTS = {"pommes"}
+
+async def prewarm_openai_cache(system_prompt_content: str):
+    """Fire a minimal background OpenAI request to warm the system prompt cache."""
+    try:
+        client = http_client.get_openai_client()
+        await client.post(
+            "/v1/chat/completions",
+            json={
+                "model": "gpt-4o",
+                "max_tokens": 1,
+                "messages": [
+                    {"role": "system", "content": system_prompt_content},
+                    {"role": "user", "content": "hej"}
+                ],
+            },
+            headers={"Authorization": f"Bearer {OPENAI_API_KEY}"},
+            timeout=httpx.Timeout(connect=5.0, read=15.0, write=5.0, pool=5.0),
+        )
+        logger.info("[CACHE PRE-WARM] Successfully fired OpenAI pre-warming task.")
+    except Exception as e:
+        logger.warning(f"[CACHE PRE-WARM] Pre-warming failed (best-effort only): {e}")
+
 
 async def stream_openai_response(payload: dict):
     valid_keys = {
@@ -138,6 +161,7 @@ async def stream_openai_response(payload: dict):
 
     buffer = ""
     client = http_client.get_openai_client()
+    first_flush_done = False
 
     try:
         async with client.stream(
@@ -208,24 +232,36 @@ async def stream_openai_response(payload: dict):
                 if "content" in delta and delta["content"] is not None:
                     buffer += delta["content"]
 
-                    # Find the last boundary to flush up to — this guarantees
-                    # multi-word phoneme entries are never split across chunks.
-                    last_boundary_idx = -1
-                    for i in range(len(buffer) - 1, -1, -1):
-                        if buffer[i] in _BOUNDARY_CHARS:
-                            last_boundary_idx = i
-                            break
+                    last_word = buffer.rstrip().split()[-1].lower() if buffer.rstrip().split() else ""
+                    holding_for_compound = last_word in _MULTI_WORD_FIRST_PARTS
 
-                    if last_boundary_idx != -1:
-                        text_to_flush = buffer[:last_boundary_idx + 1]
-                        buffer = buffer[last_boundary_idx + 1:]
-                        processed = apply_phonemes(text_to_flush)
-                        new_chunk = copy.deepcopy(chunk)
-                        new_chunk["choices"][0]["delta"]["content"] = processed
-                        yield f"data: {json.dumps(new_chunk)}\n\n"
+                    if not holding_for_compound:
+                        # First flush: use FIRST boundary to minimize TTFT
+                        # Subsequent flushes: use LAST boundary to ensure full phrases
+                        if not first_flush_done:
+                            boundary_idx = next(
+                                (i for i, c in enumerate(buffer) if c in _BOUNDARY_CHARS), -1
+                            )
+                        else:
+                            boundary_idx = next(
+                                (i for i in range(len(buffer) - 1, -1, -1) if buffer[i] in _BOUNDARY_CHARS), -1
+                            )
+
+                        if boundary_idx != -1:
+                            text_to_flush = buffer[:boundary_idx + 1]
+                            buffer = buffer[boundary_idx + 1:]
+                            processed = apply_phonemes(text_to_flush)
+                            first_flush_done = True
+                            new_chunk = copy.deepcopy(chunk)
+                            new_chunk["choices"][0]["delta"]["content"] = processed
+                            yield f"data: {json.dumps(new_chunk)}\n\n"
+                        else:
+                            # No boundary yet — emit empty metadata chunk to keep the stream alive
+                            empty = copy.deepcopy(chunk)
+                            empty["choices"][0]["delta"]["content"] = ""
+                            yield f"data: {json.dumps(empty)}\n\n"
                     else:
-                        # No boundary yet — emit empty metadata chunk to keep
-                        # the stream alive (preserves role/id fields Vapi needs)
+                        # Holding for compound — emit empty metadata chunk
                         empty = copy.deepcopy(chunk)
                         empty["choices"][0]["delta"]["content"] = ""
                         yield f"data: {json.dumps(empty)}\n\n"
@@ -270,6 +306,15 @@ async def chat_completions(request: Request):
         for msg in payload["messages"]:
             if isinstance(msg, dict) and msg.get("role") == "user" and "content" in msg:
                 msg["content"] = preprocess_user_message(msg["content"])
+
+        # Trim conversation history to the last 10 messages (5 user+assistant turns) to protect prompt cache bounds
+        messages = payload["messages"]
+        system_msgs = [m for m in messages if isinstance(m, dict) and m.get("role") == "system"]
+        convo_msgs = [m for m in messages if isinstance(m, dict) and m.get("role") != "system"]
+        MAX_CONVO_MESSAGES = 10
+        if len(convo_msgs) > MAX_CONVO_MESSAGES:
+            convo_msgs = convo_msgs[-MAX_CONVO_MESSAGES:]
+        payload["messages"] = system_msgs + convo_msgs
 
     return StreamingResponse(
         stream_openai_response(payload),
