@@ -134,14 +134,14 @@ async def create_assistant(
         "backgroundDenoisingEnabled": True,
         "startSpeakingPlan": {
             "waitSeconds": 0.1,
-            "smartEndpointingEnabled": False,
+            "smartEndpointingEnabled": True,
             "smartEndpointingPlan": {
                 "provider": "vapi"
             },
             "transcriptionEndpointingPlan": {
-                "onNumberSeconds": 0.4,
+                "onNumberSeconds": 0.2,
                 "onPunctuationSeconds": 0.1,
-                "onNoPunctuationSeconds": 0.6
+                "onNoPunctuationSeconds": 0.3
             }
         },
         "stopSpeakingPlan": {
@@ -727,14 +727,14 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "backgroundDenoisingEnabled": True,
                     "startSpeakingPlan": {
                         "waitSeconds": 0.1,
-                        "smartEndpointingEnabled": False,
+                        "smartEndpointingEnabled": True,
                         "smartEndpointingPlan": {
                             "provider": "vapi"
                         },
                         "transcriptionEndpointingPlan": {
-                            "onNumberSeconds": 0.4,
+                            "onNumberSeconds": 0.2,
                             "onPunctuationSeconds": 0.1,
-                            "onNoPunctuationSeconds": 0.6
+                            "onNoPunctuationSeconds": 0.3
                         }
                     },
                     "stopSpeakingPlan": {
