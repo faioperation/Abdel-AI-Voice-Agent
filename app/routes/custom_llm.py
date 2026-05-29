@@ -307,11 +307,11 @@ async def chat_completions(request: Request):
             if isinstance(msg, dict) and msg.get("role") == "user" and "content" in msg:
                 msg["content"] = preprocess_user_message(msg["content"])
 
-        # Trim conversation history to the last 10 messages (5 user+assistant turns) to protect prompt cache bounds
+        # Trim conversation history to the last 40 messages (20 user+assistant turns) to protect prompt cache bounds
         messages = payload["messages"]
         system_msgs = [m for m in messages if isinstance(m, dict) and m.get("role") == "system"]
         convo_msgs = [m for m in messages if isinstance(m, dict) and m.get("role") != "system"]
-        MAX_CONVO_MESSAGES = 10
+        MAX_CONVO_MESSAGES = 40
         if len(convo_msgs) > MAX_CONVO_MESSAGES:
             convo_msgs = convo_msgs[-MAX_CONVO_MESSAGES:]
         payload["messages"] = system_msgs + convo_msgs
