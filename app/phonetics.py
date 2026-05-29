@@ -7,13 +7,16 @@ DANISH_PHONEME_DICT = {
     "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
     "champignon": "sjampinjon",
 
-    # Stressed vowel suffix for pepperoni, preserving the P sound (not soft B)
-    "pepperonipizzaen": "pepperoniipizzaen",
-    "peperonipizzaen": "pepperoniipizzaen",
-    "pepperonipizza": "pepperoniipizza",
-    "peperonipizza": "pepperoniipizza",
-    "pepperoni": "pepperoniii",
-    "peperoni": "pepperoniii",
+    # Cartesia MFA-IPA Danish inline overrides for Pepperoni (matching all possible spellings)
+    "pepperronipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
+    "pepperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
+    "peperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
+    "pepperronipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
+    "pepperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
+    "peperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
+    "pepperroni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
+    "pepperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
+    "peperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
 
     # Soft open-mid front vowel and silent 't' for fiskefilet/fiskefillet (pronounced like "fiske-fil-æ")
     "fiskefilet": "fiskefilæ",
