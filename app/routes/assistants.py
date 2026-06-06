@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from sqlalchemy.orm import Session
 import httpx
 import os
@@ -23,7 +23,7 @@ async def create_assistant(
     voice_id: str = Form("Hp07ONf6C5qlCKOeB4oo"),
     system_prompt: str = Form(None),
     language: str = Form("da"),
-    files: list[UploadFile] = File(None),
+    files: Optional[List[UploadFile]] = File(None),
 
     db: Session = Depends(get_db),
     user = Depends(get_current_user)
@@ -280,7 +280,7 @@ def get_knowledge(assistant_id: str, db: Session = Depends(get_db), user=Depends
 @router.post("/api/assistant/{assistant_id}/add-files")
 async def add_files_to_assistant(
     assistant_id: str,
-    files: list[UploadFile] = File(...),
+    files: List[UploadFile] = File(...),
     db: Session = Depends(get_db),
     user=Depends(get_current_user)
 ):
