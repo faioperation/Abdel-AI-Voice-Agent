@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     await http_client.shutdown()
 
 
-app = FastAPI(title="Pizzeria Network AI Dashboard", lifespan=lifespan)
+app = FastAPI(title="Pizzeria Network AI Dashboard", lifespan=lifespan, openapi_version="3.0.2")
 
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
