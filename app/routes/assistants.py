@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Union
 from sqlalchemy.orm import Session
 import httpx
 import os
@@ -19,26 +19,21 @@ logger = logging.getLogger(__name__)
 @router.post("/api/create-assistant")
 async def create_assistant(
     assistant_name: str = Form(...),
-    model: str = Form("gemini-2.0-flash"),
-    voice_id: str = Form("Hp07ONf6C5qlCKOeB4oo"),
-    system_prompt: str = Form(None),
-    language: str = Form("da"),
-    files: Optional[List[UploadFile]] = File(None),
+    welcome_message: str = Form("Velkommen til FoodVoice punktum A I! Hvad kan jeg hjælpe dig med i dag?"),
+    file: Optional[UploadFile] = File(None),
 
-    db: Session = Depends(get_db),
-    user = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     vapi_file_ids = []
     file_names = []
     extracted_texts = []
-    if files:
-        for file in files:
-            content = await file.read()
-            file_id = await upload_file_to_vapi(content, file.filename)
-            vapi_file_ids.append(file_id)
-            file_names.append(file.filename)
-            text = extract_text_from_bytes(content, file.filename)
-            extracted_texts.append(text)
+    if file:
+        content = await file.read()
+        file_id = await upload_file_to_vapi(content, file.filename)
+        vapi_file_ids.append(file_id)
+        file_names.append(file.filename)
+        text = extract_text_from_bytes(content, file.filename)
+        extracted_texts.append(text)
 
     # Load the base prompt
     prompt_file = "system_prompt.txt"
@@ -126,7 +121,7 @@ async def create_assistant(
         },
         "voice": voice_config,
         "recordingEnabled": True,
-        "firstMessage": "Velkommen til FoodVoice punktum A I! Hvad kan jeg hjælpe dig med i dag?",
+        "firstMessage": welcome_message,
         "endCallMessage": "Tak for dit opkald, have en god dag!",
         "silenceTimeoutSeconds": 30,
         "maxDurationSeconds": 600,
@@ -181,7 +176,7 @@ async def create_assistant(
             await attach_tool_to_assistant(assistant_id, query_tool_id, current_model)
 
         # Always attach order tool
-        order_tool_id = await create_order_tool(language=language)
+        order_tool_id = await create_order_tool(language="da")
         await attach_tool_to_assistant(assistant_id, order_tool_id, current_model)
     except Exception as e:
         logger.warning(f"Tool error: {e}")
@@ -190,9 +185,9 @@ async def create_assistant(
         id=assistant_id,
         name=assistant_name,
         model=model,
-        voice_id=voice_id,
+        voice_id="a466f9e2-28eb-4bb7-925c-8e8984950700",
         system_prompt=used_prompt,
-        language=language,
+        language="da",
         vapi_data=json.dumps(vapi_data),
         query_tool_id=query_tool_id,
         file_ids=json.dumps(vapi_file_ids)
@@ -280,9 +275,8 @@ def get_knowledge(assistant_id: str, db: Session = Depends(get_db), user=Depends
 @router.post("/api/assistant/{assistant_id}/add-files")
 async def add_files_to_assistant(
     assistant_id: str,
-    files: List[UploadFile] = File(...),
-    db: Session = Depends(get_db),
-    user=Depends(get_current_user)
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
 ):
     assistant = db.query(Assistant).filter(Assistant.id == assistant_id).first()
     if not assistant:
@@ -291,12 +285,12 @@ async def add_files_to_assistant(
     new_file_ids = []
     new_file_names = []
     new_extracted = []
-    for file in files:
-        content = await file.read()
-        file_id = await upload_file_to_vapi(content, file.filename)
-        new_file_ids.append(file_id)
-        new_file_names.append(file.filename)
-        new_extracted.append(extract_text_from_bytes(content, file.filename))
+    
+    content = await file.read()
+    file_id = await upload_file_to_vapi(content, file.filename)
+    new_file_ids.append(file_id)
+    new_file_names.append(file.filename)
+    new_extracted.append(extract_text_from_bytes(content, file.filename))
 
     existing_ids = json.loads(assistant.file_ids) if assistant.file_ids else []
     updated_ids = existing_ids + new_file_ids
