@@ -9,7 +9,7 @@ router = APIRouter()
 async def get_orders(db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Fetch all orders from the database, ordered by latest."""
     try:
-        orders = db.query(Order).order_by(Order.id.asc()).all()
+        orders = db.query(Order).order_by(Order.id.desc()).all()
         return {"orders": [
             {
                 "id": o.id,
