@@ -202,12 +202,8 @@ async function createAssistant(e) {
     Swal.fire({ title: 'Building AI Agent... ✨', html: 'Sit tight! Configuring your agent.<br><br>🤖 ⚙️ ⚡', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
     const fd = new FormData();
     fd.append('assistant_name', document.getElementById('name').value);
-    fd.append('model', document.getElementById('model').value);
-    fd.append('voice_id', document.getElementById('voiceId').value);
-    fd.append('language', document.getElementById('language').value);
-    const prompt = document.getElementById('systemPrompt').value.trim();
-    if (prompt) fd.append('system_prompt', prompt);
-    for (let i = 0; i < pendingFiles.length; i++) fd.append('files', pendingFiles[i]);
+    fd.append('welcome_message', document.getElementById('welcomeMessage').value);
+    for (let i = 0; i < pendingFiles.length; i++) fd.append('file', pendingFiles[i]);
     try {
         const res = await apiCall('/api/create-assistant', { method: 'POST', body: fd });
         const data = await res.json();
