@@ -12,3 +12,4 @@ bcrypt
 httpx[http2]
 h2
 psycopg2-binary
+twilio
