@@ -29,6 +29,7 @@ class Assistant(Base):
     vapi_data = Column(Text, nullable=True)
     query_tool_id = Column(String, nullable=True)
     file_ids = Column(Text, nullable=True)
+    forwarding_number = Column(String, nullable=True)
 
 class KnowledgeBase(Base):
     __tablename__ = "knowledge_base"
