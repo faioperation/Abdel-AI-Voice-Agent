@@ -216,7 +216,8 @@ def get_assistants(db: Session = Depends(get_db), user=Depends(get_current_user)
             "voice_id": a.voice_id,
             "language": a.language,
             "system_prompt": a.system_prompt,
-            "created_at": str(a.created_at)
+            "created_at": str(a.created_at),
+            "forwarding_number": a.forwarding_number or ""
         })
 
     return {"assistants": res, "total": len(assistants)}
@@ -255,7 +256,8 @@ async def get_assistant_detail(assistant_id: str, db: Session = Depends(get_db),
         "language": assistant.language,
         "system_prompt": assistant.system_prompt or PIZZERIA_SYSTEM_PROMPT,
         "created_at": str(assistant.created_at),
-        "files": [{"name": k.file_name, "vapi_file_id": k.vapi_file_id} for k in kb_list]
+        "files": [{"name": k.file_name, "vapi_file_id": k.vapi_file_id} for k in kb_list],
+        "forwarding_number": assistant.forwarding_number or ""
     }
 
 
@@ -411,6 +413,7 @@ class UpdateAssistant(BaseModel):
     model: Optional[str] = None
     voice_id: Optional[str] = None
     language: Optional[str] = None
+    forwarding_number: Optional[str] = None
 
 
 @router.patch("/api/assistant/{assistant_id}")
@@ -478,6 +481,10 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
 
     if data.language is not None:
         assistant.language = "da"
+
+    if data.forwarding_number is not None:
+        # Store the forwarding number (strip whitespace, allow empty to clear)
+        assistant.forwarding_number = data.forwarding_number.strip() or None
 
 
     if patch_payload:
