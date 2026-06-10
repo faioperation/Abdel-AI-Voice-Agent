@@ -103,6 +103,15 @@ async def call_webhook(request: Request, db: Session = Depends(get_db)):
                     
                     try:
                         total_raw = args.get("total_price", 0)
+                        if isinstance(total_raw, str):
+                            import re
+                            # Replace comma with dot (European format)
+                            total_raw = total_raw.replace(',', '.')
+                            # Remove all non-numeric characters except dot
+                            total_raw = re.sub(r'[^\d.]', '', total_raw)
+                            # Handle empty string after cleaning
+                            if not total_raw:
+                                total_raw = 0
                         parsed_total = round(float(total_raw), 2)  # Preserve decimals e.g. 18.98
                     except (ValueError, TypeError):
                         parsed_total = 0.0
@@ -129,7 +138,39 @@ async def call_webhook(request: Request, db: Session = Depends(get_db)):
                     db.add(new_order)
                     db.commit()
                     logger.info(f"[VAPI WEBHOOK] Order saved successfully for {new_order.name}")
-                    
+
+                    # ── SMS Notification ────────────────────────────
+                    try:
+                        import asyncio
+                        from app.sms import send_order_sms
+
+                        assistant_id_for_sms = call_obj.get("assistantId")
+                        forwarding_number = None
+
+                        if assistant_id_for_sms:
+                            assistant_rec = db.query(Assistant).filter(
+                                Assistant.id == assistant_id_for_sms
+                            ).first()
+                            if assistant_rec and assistant_rec.forwarding_number:
+                                forwarding_number = assistant_rec.forwarding_number
+
+                        if forwarding_number:
+                            sms_order_data = {
+                                "customer_name": new_order.name,
+                                "phone": new_order.phone,
+                                "items": args.get("order_items", []),
+                                "total": float(new_order.total),
+                            }
+                            asyncio.create_task(
+                                send_order_sms(forwarding_number, sms_order_data)
+                            )
+                            logger.info(f"[VAPI WEBHOOK] SMS task dispatched to {forwarding_number}")
+                        else:
+                            logger.info("[VAPI WEBHOOK] No forwarding_number set — SMS skipped")
+                    except Exception as sms_err:
+                        logger.warning(f"[VAPI WEBHOOK] SMS dispatch error (non-fatal): {sms_err}")
+                    # ── End SMS Notification ────────────────────────
+
                     results.append({
                         "toolCallId": tc.get("id"),
                         "result": "Order captured and saved to database successfully."
