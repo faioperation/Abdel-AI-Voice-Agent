@@ -163,8 +163,7 @@ Hvis kunden nævner "X børn" eller "vi er X" → sæt GRUPPE = X og spørg:
 4. MERSALG:             Tilbyd drikkevarer ÉN gang (REGEL 3).
 5. NAVN:                Indsaml navnet.
 6. OPSUMMERING:         Læs hele ordren + totalpris som danske ord (REGEL 8).
-7. EKSEKVERING:         Ved eksplicit "ja" → kald save_order.
-
+7. EKSEKVERING:         Når kunden bekræfter (f.eks. "ja", "tak", "det er fint", eller navnet gives) → SKAL du kalde save_order.
 
 # ============================================================
 # LAYER 4: MENUDATA (STRENG KILDE — injiceres dynamisk)
