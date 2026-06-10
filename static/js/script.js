@@ -255,6 +255,7 @@ async function loadAssistants() {
                 a.model
             }</span>
                 <span class="assistant-meta">🎙️ Voice configured</span>
+                ${a.forwarding_number ? `<span class="assistant-meta" style="color:#10b981;">📲 SMS: ${a.forwarding_number}</span>` : `<span class="assistant-meta" style="color:var(--text-muted);opacity:.5;">📲 No SMS</span>`}
             </div>
             <div class="card-prompt-preview">${(a.system_prompt || '').substring(0, 150) || 'No system prompt'}</div>
             <div class="flex-actions" onclick="event.stopPropagation()">
@@ -335,6 +336,11 @@ async function openAgentDetail(id) {
                         <option value="en" ${a.language === 'en' ? 'selected' : ''}>🇺🇸 English Only</option>
                         <option value="da" ${a.language === 'da' ? 'selected' : ''}>🇩🇰 Danish Only</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>📲 SMS Videresendelsesnummer</label>
+                    <input id="editForwardingNumber" value="${escapeHtml(a.forwarding_number || '')}" placeholder="+45XXXXXXXX" style="font-family:monospace;">
+                    <span style="font-size:.7rem;color:var(--text-muted);margin-top:.25rem;display:block;">Ordrebesked sendes til dette nummer via SMS (Twilio)</span>
                 </div>
             </div>
 
@@ -481,10 +487,11 @@ async function saveAgentDetail(id) {
     const voiceSel = document.getElementById('editAgentVoice');
     const voice_id = voiceSel ? voiceSel.value : null;
     const language = document.getElementById('editAgentLanguage').value;
+    const forwarding_number = document.getElementById('editForwardingNumber')?.value?.trim() || '';
 
     if (!name) { Swal.fire('Validation', 'Agent name cannot be empty.', 'warning'); return; }
 
-    const payload = { name, system_prompt: prompt, model, language };
+    const payload = { name, system_prompt: prompt, model, language, forwarding_number };
     if (voice_id) payload.voice_id = voice_id;
 
     try {
