@@ -3,7 +3,7 @@ import re
 DANISH_PHONEME_DICT = {
     # Pronunciation fixes requested by client
     "pommes frites": "pomfritter",
-    "kebab": "kebæb",                 # Forces the correct flat Danish vowel
+    "kebab": "kebap",                 # Common Danish/Turkish pronunciation
     "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
     "champignon": "sjampinjon",
 
