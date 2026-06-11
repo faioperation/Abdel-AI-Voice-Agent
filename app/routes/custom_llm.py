@@ -5,6 +5,7 @@ import httpx
 import re
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse, JSONResponse
+from starlette.requests import ClientDisconnect
 from app.config import OPENAI_API_KEY, VAPI_SECRET
 from app.phonetics import apply_phonemes
 from app import http_client
@@ -299,7 +300,11 @@ async def chat_completions(request: Request):
     if secret != VAPI_SECRET:
         return JSONResponse(status_code=401, content={"error": "Unauthorized"})
 
-    payload = await request.json()
+    try:
+        payload = await request.json()
+    except ClientDisconnect:
+        logger.warning("[CHAT COMPLETIONS] Client disconnected before request body was read — ignoring.")
+        return JSONResponse(status_code=499, content={"error": "Client disconnected"})
 
     # Pre-process user message transcriptions to correct common STT spelling errors before LLM receives them
     if "messages" in payload and isinstance(payload["messages"], list):
