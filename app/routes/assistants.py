@@ -104,7 +104,7 @@ async def create_assistant(
     if BACKEND_URL:
         clean_backend_url = BACKEND_URL.rstrip('/')
     else:
-        clean_backend_url = "https://test6.fireai.agency" # Fallback to known backend
+        clean_backend_url = "https://test24.fireai.agency" # Fallback to known backend
 
     assistant_payload = {
         "name": assistant_name,
@@ -123,6 +123,7 @@ async def create_assistant(
         "recordingEnabled": True,
         "firstMessage": welcome_message,
         "endCallMessage": "Tak for dit opkald, have en god dag!",
+        "endCallFunctionEnabled": True,
         "silenceTimeoutSeconds": 30,
         "maxDurationSeconds": 600,
         "backchannelingEnabled": False,
@@ -722,6 +723,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "recordingEnabled": True,
                     "firstMessage": "Velkommen til FoodVoice punktum A I! Hvad kan jeg hjælpe dig med i dag?",
                     "endCallMessage": "Tak for dit opkald, have en god dag!",
+                    "endCallFunctionEnabled": True,
                     "silenceTimeoutSeconds": 30,
                     "maxDurationSeconds": 600,
                     "backchannelingEnabled": False,
