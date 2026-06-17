@@ -46,7 +46,7 @@ async def create_assistant(
 
 
     # --- HYBRID KB LOGIC ---
-    MAX_INJECTION_LENGTH = 10000
+    MAX_INJECTION_LENGTH = 100000
     use_query_tool = False
     
     if extracted_texts:
@@ -95,7 +95,8 @@ async def create_assistant(
         "model": "sonic-3.5",
         "voiceId": "a466f9e2-28eb-4bb7-925c-8e8984950700",
         "provider": "cartesia",
-        "language": "da"
+        "language": "da",
+        "pronunciationDictId": "pdict_7HUVgq8owrLCjKXzrpgor3"
     }
 
     model = "gpt-4o"
@@ -302,7 +303,7 @@ async def add_files_to_assistant(
         get_resp = await client.get(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
         current_model = get_resp.json().get("model", {}) if get_resp.status_code == 200 else {}
 
-        MAX_INJECTION_LENGTH = 10000
+        MAX_INJECTION_LENGTH = 100000
         
         # We need to re-evaluate size
         all_texts = []
@@ -476,7 +477,8 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
             "model": "sonic-3.5",
             "voiceId": "a466f9e2-28eb-4bb7-925c-8e8984950700",
             "provider": "cartesia",
-            "language": "da"
+            "language": "da",
+            "pronunciationDictId": "pdict_B6wnvQJWXSSEty8hs7hzcR"
         }
         assistant.voice_id = "a466f9e2-28eb-4bb7-925c-8e8984950700"
 
@@ -703,7 +705,8 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "model": "sonic-3.5",
                     "voiceId": "a466f9e2-28eb-4bb7-925c-8e8984950700",
                     "provider": "cartesia",
-                    "language": "da"
+                    "language": "da",
+                    "pronunciationDictId": "pdict_B6wnvQJWXSSEty8hs7hzcR"
                 }
 
                 clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
