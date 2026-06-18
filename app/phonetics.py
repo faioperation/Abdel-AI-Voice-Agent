@@ -1,30 +1,30 @@
 import re
 
 DANISH_PHONEME_DICT = {
-    # Pronunciation fixes requested by client
-    "pommes frites": "pomfritter",
-    "kebab": "kebap",                 # Common Danish/Turkish pronunciation
-    "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
-    "champignon": "sjampinjon",
+    # # Pronunciation fixes requested by client
+    # "pommes frites": "pomfritter",
+    # "kebab": "kebap",                 # Common Danish/Turkish pronunciation
+    # "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
+    # "champignon": "sjampinjon",
 
-    # Cartesia MFA-IPA Danish inline overrides for Pepperoni (matching all possible spellings)
-    "pepperronipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
-    "pepperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
-    "peperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
-    "pepperronipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
-    "pepperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
-    "peperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
-    "pepperroni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
-    "pepperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
-    "peperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
+    # # Cartesia MFA-IPA Danish inline overrides for Pepperoni (matching all possible spellings)
+    # "pepperronipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
+    # "pepperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
+    # "peperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
+    # "pepperronipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
+    # "pepperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
+    # "peperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
+    # "pepperroni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
+    # "pepperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
+    # "peperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
 
-    # Soft open-mid front vowel and silent 't' for fiskefilet/fiskefillet (pronounced like "fiske-fil-æ")
-    "fiskefilet": "fiskefilæ",
-    "fiskefillet": "fiskefilæ",
-    "fiskefileter": "fiskefilæer",
-    "fiskefilleter": "fiskefilæer",
-    "fiskefileten": "fiskefilæen",
-    "fiskefilleten": "fiskefilæen",
+    # # Soft open-mid front vowel and silent 't' for fiskefilet/fiskefillet (pronounced like "fiske-fil-æ")
+    # "fiskefilet": "fiskefilæ",
+    # "fiskefillet": "fiskefilæ",
+    # "fiskefileter": "fiskefilæer",
+    # "fiskefilleter": "fiskefilæer",
+    # "fiskefileten": "fiskefilæen",
+    # "fiskefilleten": "fiskefilæen",
 
     # Brand name streaming normalization
     "foodvoice.ai": "FoodVoice punktum A I",
