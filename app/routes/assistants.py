@@ -346,7 +346,7 @@ async def add_files_to_assistant(
                 except: pass
                 assistant.query_tool_id = None
             
-            clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+            clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
             patch_payload = {
                 "model": {
                     "provider": "custom-llm",
@@ -442,7 +442,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         messages = current_model.get("messages", [])
         updated_messages = [m for m in messages if m.get("role") != "system"]
         updated_messages.insert(0, {"role": "system", "content": data.system_prompt})
-        clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+        clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
         patch_payload["model"] = {
             "provider": "custom-llm",
             "model": "gpt-4o",
@@ -459,7 +459,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
     if data.model is not None:
         assistant.model = "gpt-4o"
         if "model" not in patch_payload:
-            clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+            clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
             patch_payload["model"] = {
                 "provider": "custom-llm",
                 "model": "gpt-4o",
@@ -478,7 +478,7 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
             "voiceId": "a466f9e2-28eb-4bb7-925c-8e8984950700",
             "provider": "cartesia",
             "language": "da",
-            "pronunciationDictId": "pdict_B6wnvQJWXSSEty8hs7hzcR"
+            "pronunciationDictId": "pdict_7HUVgq8owrLCjKXzrpgor3"
         }
         assistant.voice_id = "a466f9e2-28eb-4bb7-925c-8e8984950700"
 
@@ -706,10 +706,10 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "voiceId": "a466f9e2-28eb-4bb7-925c-8e8984950700",
                     "provider": "cartesia",
                     "language": "da",
-                    "pronunciationDictId": "pdict_B6wnvQJWXSSEty8hs7hzcR"
+                    "pronunciationDictId": "pdict_7HUVgq8owrLCjKXzrpgor3"
                 }
 
-                clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+                clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
                 patch_payload = {
                     "model": {
                         "provider": "custom-llm",
