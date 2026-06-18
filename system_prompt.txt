@@ -5,10 +5,6 @@
    LAYER 4 — MENUDATA (Streng kilde — injiceres dynamisk)
 
  CHANGELOG vs v4.5:
-   ! FIX: jalapeños konflikt løst — ét format overalt: halapenyos
-   ! FIX: pepperoni konflikt løst — ét format overalt: pepperroni
-   ! FIX: pommes frites regel gjort menu-kontekst-bevidst
-   ! FIX: 3 forkerte fonetikker rettet (cheddar, caesar, zero)
    + REGEL 13: Mål og enheder — tal+enheder skrives som danske ord
    + REGEL 12: 25+ nye ord tilføjet (Burger Palace + pizza fælles)
    + REGEL 12B: g og cm tilføjet til forkortelsesforbudet
