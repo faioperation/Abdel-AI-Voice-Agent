@@ -1,30 +1,40 @@
 import re
 
 DANISH_PHONEME_DICT = {
-    # # Pronunciation fixes requested by client
-    # "pommes frites": "pomfritter",
-    # "kebab": "kebap",                 # Common Danish/Turkish pronunciation
-    # "champignoner": "sjampinjoner",   # Avoids a hard G sound (from "sjampinjonger")
-    # "champignon": "sjampinjon",
-
-    # # Cartesia MFA-IPA Danish inline overrides for Pepperoni (matching all possible spellings)
-    # "pepperronipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
-    # "pepperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
-    # "peperonipizzaen": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizzaen",
-    # "pepperronipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
-    # "pepperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
-    # "peperonipizza": "<<p|ɛ|p|ə|ɾ|o|n|i>>pizza",
-    # "pepperroni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
-    # "pepperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
-    # "peperoni": "<<p|ɛ|p|ə|ɾ|o|n|i>>",
-
-    # # Soft open-mid front vowel and silent 't' for fiskefilet/fiskefillet (pronounced like "fiske-fil-æ")
-    # "fiskefilet": "fiskefilæ",
-    # "fiskefillet": "fiskefilæ",
-    # "fiskefileter": "fiskefilæer",
-    # "fiskefilleter": "fiskefilæer",
-    # "fiskefileten": "fiskefilæen",
-    # "fiskefilleten": "fiskefilæen",
+    # Pronunciation fixes requested by client (from Words.txt)
+    "coca cola": "cola",
+    "pommes frites": "pomfritter",
+    "champingnon": "schampinjong",
+    "champignon": "schampinjong",
+    "dressing": "dressingh",
+    "sandwich": "sandvich",
+    "mayonaise": "mayonæse",
+    "mayonnaise": "mayonæse",
+    "ricotta": "rikotta",
+    "kapers": "kabers",
+    "peberfrugt": "pewerfrugt",
+    "asparges": "aspars",
+    "sauce": "sovs",
+    "løgringe": "løj ringe",
+    "iceberg salat": "aisbjerg salat",
+    "lemonade": "limonade",
+    "kødsovs": "kødsaws",
+    "calzone": "kalsohne",
+    "cheddar": "tjædar",
+    "magarita": "margarita",
+    "margherita": "margarita",
+    "pepperoni": "<<p|ɛ|p|ə|ˈ|ʁ|o|n|i>>",
+    "philadelphia": "filladelphia",
+    "tabuleh": "tabbouley",
+    "kebab": "kebap",
+    "bearnasise sovs": "bearnæs sovs",
+    "bearnaise sovs": "bearnæs sovs",
+    "bearnaise": "bearnæs",
+    "græsk": "græ-sk",
+    "mascerpone": "maskarponeh",
+    "mascarpone": "maskarponeh",
+    "durum": "duhrum",
+    "baklava": "bahklava",
 
     # Brand name streaming normalization
     "foodvoice.ai": "FoodVoice punktum A I",
