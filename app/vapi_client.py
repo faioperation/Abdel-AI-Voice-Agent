@@ -191,6 +191,8 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
                 "type": "object",
                 "properties": {
                     "customer_name": {"type": "string", "description": "The customer's name."},
+                    "order_type": {"type": "string", "enum": ["pickup", "delivery"], "description": "Whether the order is for pickup or delivery."},
+                    "delivery_address": {"type": "string", "description": "The delivery address including zip code if it's a delivery. Leave this empty if pickup."},
                     "order_items": {
                         "type": "array",
                         "items": {
@@ -204,7 +206,7 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
                     },
                     "total_price": {"type": "number", "description": "The final total (sum of all items). MUST NOT BE 0. Read prices from prompt!"}
                 },
-                "required": ["customer_name", "order_items", "total_price"]
+                "required": ["customer_name", "order_type", "order_items", "total_price"]
             }
         }
     }
