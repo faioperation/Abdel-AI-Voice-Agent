@@ -13,6 +13,26 @@ from app.config import PIZZERIA_SYSTEM_PROMPT, VAPI_BASE, BACKEND_URL, VAPI_SECR
 from app.vapi_client import upload_file_to_vapi, create_query_tool, attach_tool_to_assistant, vapi_headers, delete_file_from_vapi, create_order_tool
 from app.file_utils import extract_text_from_bytes
 
+def apply_word_replacements(text: str) -> str:
+    """Applies case-insensitive phonetic replacements to the menu text."""
+    if not text:
+        return text
+    try:
+        import re
+        from app.phonetics import DANISH_PHONEME_DICT
+        
+        # Sort keys by length descending to replace longer phrases first
+        sorted_keys = sorted(DANISH_PHONEME_DICT.keys(), key=len, reverse=True)
+        for bad in sorted_keys:
+            good = DANISH_PHONEME_DICT[bad]
+            if bad and good:
+                # Using regex for case-insensitive replacement
+                pattern = re.compile(re.escape(bad), re.IGNORECASE)
+                text = pattern.sub(good, text)
+    except Exception as e:
+        logger.error(f"Error applying word replacements: {e}")
+    return text
+
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
@@ -51,6 +71,7 @@ async def create_assistant(
     
     if extracted_texts:
         combined_menu_text = "\n\n".join(extracted_texts)
+        combined_menu_text = apply_word_replacements(combined_menu_text)
         if len(combined_menu_text) <= MAX_INJECTION_LENGTH:
             # Small files: Inject directly into prompt (No RAG needed)
             placeholder = "[The menu data will be extracted from your KB file and placed here. If this section is empty, use 'knowledge-search' for all items.]"
@@ -130,7 +151,7 @@ async def create_assistant(
         "backchannelingEnabled": False,
         "backgroundDenoisingEnabled": True,
         "startSpeakingPlan": {
-            "waitSeconds": 0.1,
+            "waitSeconds": 0.4,
             "smartEndpointingEnabled": True,
             "smartEndpointingPlan": {
                 "provider": "vapi"
@@ -142,9 +163,9 @@ async def create_assistant(
             }
         },
         "stopSpeakingPlan": {
-            "numWords": 0,
-            "voiceSeconds": 0.3,
-            "backoffSeconds": 0.6
+            "numWords": 3,
+            "voiceSeconds": 0.5,
+            "backoffSeconds": 1
         }
     }
 
@@ -314,6 +335,7 @@ async def add_files_to_assistant(
         all_texts.extend(new_extracted)
         
         combined_text = "\n\n".join(all_texts)
+        combined_text = apply_word_replacements(combined_text)
         
         if len(combined_text) <= MAX_INJECTION_LENGTH:
             # Small files -> Inject into prompt, remove query_tool if exists
@@ -670,6 +692,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
 
                 if extracted_texts:
                     combined_menu_text = "\n\n".join(extracted_texts)
+                    combined_menu_text = apply_word_replacements(combined_menu_text)
                     placeholder = "[The menu data will be extracted from your KB file and placed here. If this section is empty, use 'knowledge-search' for all items.]"
                     menu_header = "# MENUDATA (STRENG KILDE)\n"
                     
@@ -732,7 +755,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     "backchannelingEnabled": False,
                     "backgroundDenoisingEnabled": True,
                     "startSpeakingPlan": {
-                        "waitSeconds": 0.1,
+                        "waitSeconds": 0.4,
                         "smartEndpointingEnabled": True,
                         "smartEndpointingPlan": {
                             "provider": "vapi"
@@ -744,9 +767,9 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         }
                     },
                     "stopSpeakingPlan": {
-                        "numWords": 0,
-                        "voiceSeconds": 0.3,
-                        "backoffSeconds": 0.6
+                        "numWords": 3,
+                        "voiceSeconds": 0.5,
+                        "backoffSeconds": 1
                     },
                     "voice": current_voice
                 }
