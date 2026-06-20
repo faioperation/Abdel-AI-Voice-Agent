@@ -128,8 +128,20 @@ async def call_webhook(request: Request, db: Session = Depends(get_db)):
                         })
                         continue
                         
+                    order_type = args.get("order_type", "pickup").upper()
+                    delivery_address = args.get("delivery_address", "").strip()
+                    base_name = args.get("customer_name") or "Unknown"
+                    
+                    if order_type == "DELIVERY" and delivery_address:
+                        display_name = f"{base_name} (LEVERING: {delivery_address})"
+                    elif order_type == "PICKUP" or not delivery_address:
+                        display_name = f"{base_name} (AFHENTNING)"
+                    else:
+                        display_name = base_name
+
                     new_order = Order(
-                        name=args.get("customer_name") or "Unknown",
+                        name=display_name,
+                        #name=args.get("customer_name") or "Unknown",
                         phone=phone,
                         order=json.dumps(args.get("order_items") or []),
                         total=parsed_total,
