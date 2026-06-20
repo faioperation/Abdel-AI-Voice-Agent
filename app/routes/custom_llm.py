@@ -96,6 +96,34 @@ _FUZZY_MAP = {
     # General non-menu
     "lasagne": "lasagne", "lasagna": "lasagne",
     "dürüm": "dürüm", "kebabmenu": "dürüm",
+
+    # Words.txt additions
+    "cola": "coca cola",
+    "schampinjong": "champignon",
+    "dressingh": "dressing",
+    "dresing": "dressing",
+    "sandvich": "sandwich",
+    "mayonæse": "mayonnaise",
+    "rikotta": "ricotta",
+    "kabers": "kapers",
+    "pewerfrugt": "peberfrugt",
+    "aspars": "asparges",
+    "sovs": "sauce",
+    "løj ringe": "løgringe",
+    "aisbjerg salat": "iceberg salat",
+    "limonade": "lemonade",
+    "kødsaws": "kødsovs",
+    "kalsohne": "calzone",
+    "tjædar": "cheddar",
+    "margarita": "margherita",
+    "filladelphia": "philadelphia",
+    "tabbouley": "tabouleh",
+    "kebap": "kebab",
+    "bearnæs sovs": "bearnaise sovs",
+    "græ-sk": "græsk",
+    "maskarponeh": "mascarpone",
+    "duhrum": "durum",
+    "bahklava": "baklava",
 }
 
 _SORTED_KEYS = sorted(_FUZZY_MAP.keys(), key=len, reverse=True)
