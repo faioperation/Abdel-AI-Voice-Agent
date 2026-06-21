@@ -113,6 +113,32 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
     """
     from .config import BACKEND_URL
     
+    function_payload = {
+        "name": tool_name,
+        "description": "Saves the confirmed pizza order. Use ONLY after customer confirms final price. Read prices from # MENU DATA.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "customer_name": {"type": "string", "description": "The customer's name."},
+                "order_type": {"type": "string", "enum": ["pickup", "delivery"], "description": "Whether the order is for pickup or delivery."},
+                "delivery_address": {"type": "string", "description": "The delivery address including zip code if it's a delivery. Leave this empty if pickup."},
+                "order_items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "size": {"type": "string"},
+                            "quantity": {"type": "number"}
+                        }
+                    }
+                },
+                "total_price": {"type": "number", "description": "The final total price of the order. You MUST calculate this accurately by adding the exact price of each item from the MENUDATA. NEVER set this to 0."}
+            },
+            "required": ["customer_name", "order_type", "order_items", "total_price"]
+        }
+    }
+
     # 1. Check if tool already exists
     try:
         async with httpx.AsyncClient(timeout=20) as client:
@@ -135,32 +161,32 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
                         if language == "da" and not is_danish: should_update = True
                         if language == "en" and is_danish: should_update = True
 
-                        # If we have a BACKEND_URL or need language update, patch the tool
-                        if BACKEND_URL or should_update:
-                            server_url = f"{BACKEND_URL}/api/webhook/call"
-                            existing_server = t.get("server", {}) or {}
-                            
-                            patch_payload = {}
-                            if existing_server.get("url") != server_url:
-                                patch_payload["server"] = {"url": server_url}
-                            
-                            if should_update:
-                                if language == "da":
-                                    patch_payload["messages"] = [
-                                        {"type": "request-start", "content": "Et øjeblik, jeg sender lige din ordre afsted..."},
-                                        {"type": "request-complete", "content": "Sådan! Din bestilling er nu modtaget og vi går i gang."},
-                                        {"type": "request-failed", "content": "Beklager, der skete en lille fejl med at gemme ordren. Skal vi prøve igen?"}
-                                    ]
-                                else:
-                                    patch_payload["messages"] = [
-                                        {"type": "request-start", "content": "Saving your order details..."},
-                                        {"type": "request-complete", "content": "Order details saved successfully."},
-                                        {"type": "request-failed", "content": "Sorry, I couldn't save the order details. Please try again."}
-                                    ]
-                            
-                            if patch_payload:
-                                logger.info(f"Updating tool {tool_name} with: {patch_payload}")
-                                await client.patch(f"{VAPI_BASE}/tool/{tool_id}", json=patch_payload, headers=vapi_headers())
+                        server_url = f"{BACKEND_URL}/api/webhook/call" if BACKEND_URL else None
+                        existing_server = t.get("server", {}) or {}
+                        
+                        patch_payload = {
+                            "function": function_payload
+                        }
+                        
+                        if server_url and existing_server.get("url") != server_url:
+                            patch_payload["server"] = {"url": server_url}
+                        
+                        if should_update:
+                            if language == "da":
+                                patch_payload["messages"] = [
+                                    {"type": "request-start", "content": "Et øjeblik, jeg sender lige din ordre afsted..."},
+                                    {"type": "request-complete", "content": "Sådan! Din bestilling er nu modtaget og vi går i gang."},
+                                    {"type": "request-failed", "content": "Beklager, der skete en lille fejl med at gemme ordren. Skal vi prøve igen?"}
+                                ]
+                            else:
+                                patch_payload["messages"] = [
+                                    {"type": "request-start", "content": "Saving your order details..."},
+                                    {"type": "request-complete", "content": "Order details saved successfully."},
+                                    {"type": "request-failed", "content": "Sorry, I couldn't save the order details. Please try again."}
+                                ]
+                        
+                        logger.info(f"Updating tool {tool_name} with: {patch_payload}")
+                        await client.patch(f"{VAPI_BASE}/tool/{tool_id}", json=patch_payload, headers=vapi_headers())
                         
                         logger.info(f"Reusing tool: {tool_name} ({tool_id})")
                         return tool_id
@@ -183,32 +209,7 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
     payload = {
         "type": "function",
         "messages": messages,
-        "function": {
-            "name": tool_name,
-            "description": "Saves the confirmed pizza order. Use ONLY after customer confirms final price. Read prices from # MENU DATA.",
-
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "customer_name": {"type": "string", "description": "The customer's name."},
-                    "order_type": {"type": "string", "enum": ["pickup", "delivery"], "description": "Whether the order is for pickup or delivery."},
-                    "delivery_address": {"type": "string", "description": "The delivery address including zip code if it's a delivery. Leave this empty if pickup."},
-                    "order_items": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "name": {"type": "string"},
-                                "size": {"type": "string"},
-                                "quantity": {"type": "number"}
-                            }
-                        }
-                    },
-                    "total_price": {"type": "number", "description": "The final total (sum of all items). MUST NOT BE 0. Read prices from prompt!"}
-                },
-                "required": ["customer_name", "order_type", "order_items", "total_price"]
-            }
-        }
+        "function": function_payload
     }
 
     # Add server URL if providing reliability for voice calls
