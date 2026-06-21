@@ -103,6 +103,8 @@ async def call_webhook(request: Request, db: Session = Depends(get_db)):
                     
                     try:
                         total_raw = args.get("total_price", 0)
+                        if total_raw is None:
+                            total_raw = 0
                         if isinstance(total_raw, str):
                             import re
                             # Replace comma with dot (European format)
@@ -116,21 +118,19 @@ async def call_webhook(request: Request, db: Session = Depends(get_db)):
                     except (ValueError, TypeError):
                         parsed_total = 0.0
                         
+                    # We no longer reject the order if parsed_total <= 0.0
+                    # because it causes valid orders to be dropped if the AI fails to calculate the price.
                     if parsed_total <= 0.0:
-                        logger.warning(f"[VAPI WEBHOOK] Rejected order for {args.get('customer_name')} due to $0 price.")
-                        results.append({
-                            "toolCallId": tc.get("id"),
-                            "result": (
-                                "REJECTED: total_price is 0. This is FORBIDDEN. "
-                                "You MUST: 1. Call 'knowledge-search' for each item. 2. Calculate the total. "
-                                "3. Tell the customer the prices. 4. Get their confirmation. 5. Call 'save_order' with the REAL total."
-                            )
-                        })
-                        continue
+                        logger.warning(f"[VAPI WEBHOOK] Saving order for {args.get('customer_name')} despite $0 price.")
                         
-                    order_type = args.get("order_type", "pickup").upper()
-                    delivery_address = args.get("delivery_address", "").strip()
-                    base_name = args.get("customer_name") or "Unknown"
+                    order_type_raw = args.get("order_type")
+                    order_type = str(order_type_raw).upper() if order_type_raw else "PICKUP"
+                    
+                    delivery_address_raw = args.get("delivery_address")
+                    delivery_address = str(delivery_address_raw).strip() if delivery_address_raw else ""
+                    
+                    base_name = args.get("customer_name")
+                    base_name = str(base_name) if base_name else "Unknown"
                     
                     if order_type == "DELIVERY" and delivery_address:
                         display_name = f"{base_name} (LEVERING: {delivery_address})"
@@ -139,11 +139,14 @@ async def call_webhook(request: Request, db: Session = Depends(get_db)):
                     else:
                         display_name = base_name
 
+                    order_items = args.get("order_items") or []
+                    if not isinstance(order_items, list):
+                        order_items = [order_items]
+
                     new_order = Order(
                         name=display_name,
-                        #name=args.get("customer_name") or "Unknown",
                         phone=phone,
-                        order=json.dumps(args.get("order_items") or []),
+                        order=json.dumps(order_items),
                         total=parsed_total,
                         call_id=call_id
                     )
