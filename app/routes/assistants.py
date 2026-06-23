@@ -10,7 +10,7 @@ import os
 from app.database import get_db, Assistant, KnowledgeBase
 from app.auth import get_current_user
 from app.config import PIZZERIA_SYSTEM_PROMPT, VAPI_BASE, BACKEND_URL, VAPI_SECRET
-from app.vapi_client import upload_file_to_vapi, create_query_tool, attach_tool_to_assistant, vapi_headers, delete_file_from_vapi, create_order_tool
+from app.vapi_client import upload_file_to_vapi, create_query_tool, attach_tool_to_assistant, vapi_headers, delete_file_from_vapi, create_order_tool, create_address_verification_tool
 from app.file_utils import extract_text_from_bytes
 
 def apply_word_replacements(text: str) -> str:
@@ -201,6 +201,10 @@ async def create_assistant(
         # Always attach order tool
         order_tool_id = await create_order_tool(language="da")
         await attach_tool_to_assistant(assistant_id, order_tool_id, current_model)
+
+        # Always attach address verification tool
+        address_tool_id = await create_address_verification_tool()
+        await attach_tool_to_assistant(assistant_id, address_tool_id, current_model)
     except Exception as e:
         logger.warning(f"Tool error: {e}")
 
@@ -681,6 +685,9 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                     # Small delay to respect Vapi's API rate limits
                     await asyncio.sleep(1)
                 order_tool_id = order_tool_cache[va_lang]
+                
+                # We can also attach the address verification tool here
+                address_tool_id = await create_address_verification_tool()
 
                 # Load correct prompt
                 p_file = "system_prompt.txt"
@@ -739,7 +746,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "gpt-4o",
                         "url": f"{clean_backend_url}/api/chat/completions",
                         "messages": [{"role": "system", "content": final_prompt}],
-                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id])),
+                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id, address_tool_id])),
                         "temperature": 0.3,
                         "headers": {
                             "x-vapi-secret": VAPI_SECRET
