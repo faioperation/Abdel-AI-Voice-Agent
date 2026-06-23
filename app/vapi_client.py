@@ -212,7 +212,6 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
         "function": function_payload
     }
 
-    # Add server URL if providing reliability for voice calls
     if BACKEND_URL:
         payload["server"] = {"url": f"{BACKEND_URL}/api/webhook/call"}
 
@@ -220,4 +219,58 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
         response = await client.post(f"{VAPI_BASE}/tool", json=payload, headers=vapi_headers())
     if response.status_code not in (200, 201):
         raise Exception(f"Order tool creation failed: {response.text}")
+    return response.json()["id"]
+
+async def create_address_verification_tool(tool_name: str = "verify_delivery_address") -> str:
+    """
+    Ensures a single 'verify_delivery_address' tool exists in the Vapi account.
+    If it exists, reuses it.
+    """
+    from .config import BACKEND_URL
+    
+    function_payload = {
+        "name": tool_name,
+        "description": "Verifies if the customer's street address is within the acceptable delivery zone for their postal code. Use this tool whenever the customer provides a postal code and address for delivery.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "postal_code": {"type": "string", "description": "The postal code provided by the customer."},
+                "address": {"type": "string", "description": "The street address provided by the customer."}
+            },
+            "required": ["postal_code", "address"]
+        }
+    }
+
+    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
+    server_url = f"{clean_backend_url}/api/verify-address"
+
+    # 1. Check if tool already exists
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.get(f"{VAPI_BASE}/tool", headers=vapi_headers())
+            if resp.status_code == 200:
+                tools = resp.json()
+                for t in tools:
+                    if t.get("function", {}).get("name") == tool_name:
+                        tool_id = t["id"]
+                        patch_payload = {
+                            "function": function_payload,
+                            "server": {"url": server_url}
+                        }
+                        await client.patch(f"{VAPI_BASE}/tool/{tool_id}", json=patch_payload, headers=vapi_headers())
+                        return tool_id
+    except Exception as e:
+        logger.warning(f"Error checking/updating address verification tool: {e}")
+
+    # 2. Create new tool if not found
+    payload = {
+        "type": "function",
+        "function": function_payload,
+        "server": {"url": server_url}
+    }
+
+    async with httpx.AsyncClient(timeout=20) as client:
+        response = await client.post(f"{VAPI_BASE}/tool", json=payload, headers=vapi_headers())
+    if response.status_code not in (200, 201):
+        raise Exception(f"Address verification tool creation failed: {response.text}")
     return response.json()["id"]
