@@ -1,0 +1,7 @@
+"Gåsegade 2, 2., 1465 København K"
+"Gåsegade 1, 1465 København K"
+"Gåsegade 2, st., 1465 København K"
+"Gåsegade 2, 4., 1465 København K"
+"Gåsegade 2, 1., 1465 København K"
+"Gåsegade 2, 3., 1465 København K"
+"Gåsegade 1, kl., 1465 København K"
