@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from app.routes import (
     auth_router, assistants_router, calls_router, chat_router,
     telephony_router, billing_router, orders_router, custom_llm_router,
+    address_router,
 )
 from app.database import init_db
 from app import http_client
@@ -43,6 +44,7 @@ app.include_router(telephony_router)
 app.include_router(billing_router)
 app.include_router(orders_router)
 app.include_router(custom_llm_router)
+app.include_router(address_router)
 
 from fastapi.responses import HTMLResponse
 
