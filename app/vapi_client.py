@@ -82,7 +82,7 @@ async def attach_tool_to_assistant(assistant_id: str, tool_id: str, current_mode
     if tool_id not in existing_tool_ids:
         existing_tool_ids.append(tool_id)
     from .config import BACKEND_URL, VAPI_SECRET
-    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
 
     patch_payload = {
         "model": {
