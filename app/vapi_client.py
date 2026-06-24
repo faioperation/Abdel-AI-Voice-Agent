@@ -82,7 +82,7 @@ async def attach_tool_to_assistant(assistant_id: str, tool_id: str, current_mode
     if tool_id not in existing_tool_ids:
         existing_tool_ids.append(tool_id)
     from .config import BACKEND_URL, VAPI_SECRET
-    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
 
     patch_payload = {
         "model": {
@@ -230,18 +230,18 @@ async def create_address_verification_tool(tool_name: str = "verify_delivery_add
     
     function_payload = {
         "name": tool_name,
-        "description": "Verifies if the customer's street address is within the acceptable delivery zone for their postal code. Use this tool whenever the customer provides a postal code and address for delivery.",
+        "description": "Verifies if the customer's street address is within the acceptable delivery zone for their 4-digit postal code. Use this tool ONLY when you have both a separate 4-digit postal code and a street name + house number. Do not include the postal code or city inside the address parameter.",
         "parameters": {
             "type": "object",
             "properties": {
-                "postal_code": {"type": "string", "description": "The postal code provided by the customer."},
-                "address": {"type": "string", "description": "The street address provided by the customer."}
+                "postal_code": {"type": "string", "description": "The 4-digit postal code provided by the customer (e.g. 1620)."},
+                "address": {"type": "string", "description": "The street address + house number ONLY (e.g. Vesterbrogade 14). Do not include the postal code or city."}
             },
             "required": ["postal_code", "address"]
         }
     }
 
-    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test6.fireai.agency"
+    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
     server_url = f"{clean_backend_url}/api/verify-address"
 
     # 1. Check if tool already exists
