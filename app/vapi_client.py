@@ -234,7 +234,7 @@ async def create_address_verification_tool(tool_name: str = "verify_delivery_add
         "parameters": {
             "type": "object",
             "properties": {
-                "postal_code": {"type": "string", "description": "The 4-digit postal code provided by the customer (e.g. 1620)."},
+                "postal_code": {"type": "string", "description": "The 4-digit postal code as digits only (e.g. '2860'). Convert spoken Danish numbers like 'otteogtyve tres' to '2860' before calling. Never pass words or the city name."},
                 "address": {"type": "string", "description": "The street address + house number ONLY (e.g. Vesterbrogade 14). Do not include the postal code or city."}
             },
             "required": ["postal_code", "address"]
