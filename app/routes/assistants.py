@@ -12,6 +12,7 @@ from app.auth import get_current_user
 from app.config import PIZZERIA_SYSTEM_PROMPT, VAPI_BASE, BACKEND_URL, VAPI_SECRET
 from app.vapi_client import upload_file_to_vapi, create_query_tool, attach_tool_to_assistant, vapi_headers, delete_file_from_vapi, create_order_tool, create_address_verification_tool
 from app.file_utils import extract_text_from_bytes
+from app import http_client
 
 def apply_word_replacements(text: str) -> str:
     """Applies case-insensitive phonetic replacements to the menu text."""
@@ -179,8 +180,9 @@ async def create_assistant(
             "timeoutSeconds": 20
         }
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(f"{VAPI_BASE}/assistant", json=assistant_payload, headers=vapi_headers())
+#    async with httpx.AsyncClient(timeout=30) as client:
+    client = http_client.get_vapi_client()
+    resp = await client.post(f"{VAPI_BASE}/assistant", json=assistant_payload, headers=vapi_headers())
 
     if resp.status_code not in (200, 201):
         error_detail = resp.text
@@ -268,8 +270,9 @@ async def get_assistant_detail(assistant_id: str, db: Session = Depends(get_db),
         raise HTTPException(404, "Assistant not found")
     kb_list = db.query(KnowledgeBase).filter(KnowledgeBase.assistant_id == assistant_id).all()
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        get_resp = await client.get(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
+#    async with httpx.AsyncClient(timeout=10) as client:
+    client = http_client.get_vapi_client()
+    get_resp = await client.get(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
     
     if get_resp.status_code != 200:
         # Fallback if Vapi lookup fails
@@ -451,12 +454,13 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
         raise HTTPException(404, "Assistant not found")
 
     # Fetch current Vapi state
-    async with httpx.AsyncClient(timeout=20) as client:
-        get_resp = await client.get(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
-        if get_resp.status_code != 200:
-            raise HTTPException(500, "Failed to fetch assistant from Vapi")
-        vapi_assistant = get_resp.json()
-        current_model = vapi_assistant.get("model", {})
+#    async with httpx.AsyncClient(timeout=20) as client:
+    client = http_client.get_vapi_client()
+    get_resp = await client.get(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
+    if get_resp.status_code != 200:
+        raise HTTPException(500, "Failed to fetch assistant from Vapi")
+    vapi_assistant = get_resp.json()
+    current_model = vapi_assistant.get("model", {})
 
     patch_payload = {}
 
@@ -524,8 +528,9 @@ async def update_assistant(assistant_id: str, data: UpdateAssistant, db: Session
                 "url": f"{clean_backend_url}/api/webhook/call",
                 "timeoutSeconds": 20
             }
-        async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.patch(f"{VAPI_BASE}/assistant/{assistant.id}", json=patch_payload, headers=vapi_headers())
+#        async with httpx.AsyncClient(timeout=20) as client:
+        client = http_client.get_vapi_client()
+        resp = await client.patch(f"{VAPI_BASE}/assistant/{assistant.id}", json=patch_payload, headers=vapi_headers())
         if resp.status_code not in (200, 201) and resp.status_code != 204:
             raise HTTPException(500, f"Failed updating Vapi: {resp.text}")
 
@@ -561,12 +566,13 @@ async def delete_kb_file(assistant_id: str, file_id: str, db: Session = Depends(
                     "fileIds": existing_ids
                 }]
             }
-            async with httpx.AsyncClient(timeout=20) as client:
-                await client.patch(
-                    f"{VAPI_BASE}/tool/{assistant.query_tool_id}",
-                    json=patch_payload,
-                    headers=vapi_headers()
-                )
+#            async with httpx.AsyncClient(timeout=20) as client:
+            client = http_client.get_vapi_client()
+            await client.patch(
+                f"{VAPI_BASE}/tool/{assistant.query_tool_id}",
+                json=patch_payload,
+                headers=vapi_headers()
+            )
 
     db.delete(kb_file)
     db.commit()
@@ -582,11 +588,12 @@ async def delete_assistant(assistant_id: str, db: Session = Depends(get_db), use
                 await delete_file_from_vapi(kb_file.vapi_file_id)
 
         # Delete the assistant and its query tool from Vapi
-        async with httpx.AsyncClient(timeout=20) as client:
-            await client.delete(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
-            assistant = db.query(Assistant).filter(Assistant.id == assistant_id).first()
-            if assistant and assistant.query_tool_id:
-                await client.delete(f"{VAPI_BASE}/tool/{assistant.query_tool_id}", headers=vapi_headers())
+#        async with httpx.AsyncClient(timeout=20) as client:
+        client = http_client.get_vapi_client()
+        await client.delete(f"{VAPI_BASE}/assistant/{assistant_id}", headers=vapi_headers())
+        assistant = db.query(Assistant).filter(Assistant.id == assistant_id).first()
+        if assistant and assistant.query_tool_id:
+            await client.delete(f"{VAPI_BASE}/tool/{assistant.query_tool_id}", headers=vapi_headers())
     except Exception as e:
         logger.warning(f"Error during Vapi deletion (continuing): {e}")
 
@@ -603,21 +610,24 @@ async def fix_vapi_tool(db: Session = Depends(get_db)):
     from app.database import init_db
     try:
         init_db()
+        client = http_client.get_vapi_client()
+
         # 1. Try to delete existing tool
         try:
-            async with httpx.AsyncClient(timeout=20) as client:
-                resp = await client.get(f"{VAPI_BASE}/tool", headers=vapi_headers())
-                if resp.status_code == 200:
-                    for t in resp.json():
-                        if t.get("function", {}).get("name") == "save_order":
-                            await client.delete(f"{VAPI_BASE}/tool/{t['id']}", headers=vapi_headers())
-        except: pass
+            resp = await client.get(f"{VAPI_BASE}/tool", headers=vapi_headers())
+            if resp.status_code == 200:
+                for t in resp.json():
+                    if t.get("function", {}).get("name") == "save_order":
+                        await client.delete(f"{VAPI_BASE}/tool/{t['id']}", headers=vapi_headers())
+        except Exception as e:
+            logger.warning(f"Error deleting existing save_order tool: {e}")
         
         # 2. Create fresh tool
         tool_id = await create_order_tool()
         
         # 3. Attach new tool to ALL assistants in the Vapi account
         updated_count = 0
+        failed_count = 0
         try:
             get_all_resp = await client.get(f"{VAPI_BASE}/assistant", headers=vapi_headers())
             if get_all_resp.status_code == 200:
@@ -627,16 +637,19 @@ async def fix_vapi_tool(db: Session = Depends(get_db)):
                     try:
                         await attach_tool_to_assistant(assistant_id, tool_id, current_model)
                         updated_count += 1
-                    except: pass
+                    except Exception as attach_err:
+                        failed_count += 1
+                        logger.warning(f"Failed to attach tool to assistant {assistant_id}: {attach_err}")
         except Exception as api_err:
-            logger.warning(f"Failed to fetch all assistants from Vapi: {api_err}")
+            logger.error(f"Failed to fetch all assistants from Vapi: {api_err}")
 
         return {
             "success": True, 
-            "message": f"Tool Recreated and attached to {updated_count} Vapi assistants.", 
+            "message": f"Tool recreated and attached to {updated_count} Vapi assistants ({failed_count} failed).", 
             "tool_id": tool_id
         }
     except Exception as e:
+        logger.error(f"fix_vapi_tool failed: {e}")
         return {"success": False, "error": str(e)}
 
 @router.get("/api/fix-all-assistants")
