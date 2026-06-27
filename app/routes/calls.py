@@ -9,6 +9,7 @@ from app.database import get_db, CallRecord, Assistant, Order
 from app.auth import get_current_user
 from app.config import VAPI_BASE, VAPI_API_KEY
 from app.vapi_client import vapi_headers
+from app import http_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -22,8 +23,9 @@ async def start_call(request: Request, db: Session = Depends(get_db), user=Depen
     if not assistant_id or not phone_number:
         raise HTTPException(400, "Missing fields")
     payload = {"assistantId": assistant_id, "customer": {"number": phone_number}}
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.post(f"{VAPI_BASE}/call", json=payload, headers=vapi_headers())
+#    async with httpx.AsyncClient(timeout=30) as client:
+    client = http_client.get_vapi_client()
+    resp = await client.post(f"{VAPI_BASE}/call", json=payload, headers=vapi_headers())
     if resp.status_code not in (200, 201):
         raise HTTPException(resp.status_code, resp.text)
     call_data = resp.json()
@@ -208,8 +210,9 @@ async def get_calls(assistant_id: str = None, user=Depends(get_current_user)):
     if assistant_id:
         params["assistantId"] = assistant_id
 
-    async with httpx.AsyncClient(timeout=20) as client:
-        res = await client.get(f"{VAPI_BASE}/call", headers=headers, params=params)
+#    async with httpx.AsyncClient(timeout=20) as client:
+    client = http_client.get_vapi_client()
+    res = await client.get(f"{VAPI_BASE}/call", headers=headers, params=params)
 
     if res.status_code != 200:
         raise HTTPException(res.status_code, f"Error fetching calls from Vapi: {res.text}")
