@@ -144,7 +144,7 @@ def _load_streets_for_postal_code(postal_code: str):
     return (frozenset(db_streets), db_street_display_map)
 
 
-# ── Core matching logic (unchanged algorithm) ─────────────────────────────────
+# ── Core matching logic ───────────────────────────────────────────────────────
 
 def _match_street(user_address: str, postal_code: str):
     """
@@ -157,18 +157,25 @@ def _match_street(user_address: str, postal_code: str):
 
     db_streets, db_street_display_map = result
 
+    # Clean up postal code and city that LLMs might hallucinate into the address
+    clean_addr = re.sub(r',?\s*\b\d{4}\b.*$', '', user_address.strip()).strip()
+    if not clean_addr:
+        clean_addr = user_address.strip()
+
     # Extract street name from the user's input
-    user_street = extract_street_name(user_address)
+    user_street = extract_street_name(clean_addr)
     if not user_street:
         return (False, "Please provide a valid street name.")
 
     user_street_lower = user_street.lower()
     user_street_norm = normalize_street(user_street)
 
-    # Extract house number from user's address
-    user_tokens = user_address.strip().split()
+    # Extract house number from the cleaned address (part before the first comma)
+    parts = clean_addr.split(",")
+    street_and_number = parts[0].strip()
+    user_tokens = street_and_number.split()
     house_number = ""
-    if user_tokens and user_tokens[-1][0].isdigit():
+    if len(user_tokens) > 1 and user_tokens[-1][0].isdigit():
         house_number = " " + user_tokens[-1]
 
     # 1. Exact Match Check (fast)
