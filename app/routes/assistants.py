@@ -133,14 +133,10 @@ async def create_assistant(
         "name": assistant_name,
         "transcriber": transcriber_config,
         "model": {
-            "provider": "custom-llm",
+            "provider": "openai",
             "model": model,
-            "url": f"{clean_backend_url}/api/chat/completions",
             "messages": [{"role": "system", "content": used_prompt}],
-            "temperature": 0.3,
-            "headers": {
-                "x-vapi-secret": VAPI_SECRET
-            }
+            "temperature": 0.3
         },
         "voice": voice_config,
         "recordingEnabled": True,
@@ -193,6 +189,9 @@ async def create_assistant(
     vapi_data = resp.json()
     assistant_id = vapi_data["id"]
     current_model = vapi_data.get("model", {})
+    
+    # Clear any inherited or deleted tools that Vapi might have injected automatically
+    current_model["toolIds"] = []
 
     try:
         query_tool_id = None
@@ -611,16 +610,6 @@ async def fix_vapi_tool(db: Session = Depends(get_db)):
     try:
         init_db()
         client = http_client.get_vapi_client()
-
-        # 1. Try to delete existing tool
-        try:
-            resp = await client.get(f"{VAPI_BASE}/tool", headers=vapi_headers())
-            if resp.status_code == 200:
-                for t in resp.json():
-                    if t.get("function", {}).get("name") == "save_order":
-                        await client.delete(f"{VAPI_BASE}/tool/{t['id']}", headers=vapi_headers())
-        except Exception as e:
-            logger.warning(f"Error deleting existing save_order tool: {e}")
         
         # 2. Create fresh tool
         tool_id = await create_order_tool()
@@ -753,13 +742,18 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 }
 
                 clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
+                
+                valid_tools = [order_tool_id, address_tool_id]
+                if db_a and db_a.query_tool_id:
+                    valid_tools.append(db_a.query_tool_id)
+                
                 patch_payload = {
                     "model": {
                         "provider": "custom-llm",
                         "model": "gpt-4o",
                         "url": f"{clean_backend_url}/api/chat/completions",
                         "messages": [{"role": "system", "content": final_prompt}],
-                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id, address_tool_id])),
+                        "toolIds": valid_tools,
                         "temperature": 0.3,
                         "headers": {
                             "x-vapi-secret": VAPI_SECRET
