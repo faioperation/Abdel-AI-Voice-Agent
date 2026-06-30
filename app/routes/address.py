@@ -89,6 +89,41 @@ def resolve_postal_code(raw: str) -> Optional[str]:
 
 # ── Street name extraction & normalization (unchanged logic) ──────────────────
 
+_NUM_WORDS = {
+    # Danish digits and tens
+    "en", "et", "to", "tre", "fire", "fem", "seks", "syv", "otte", "ni", "ti",
+    "elleve", "tolv", "tretten", "fjorten", "femten", "seksten", "sytten", "atten", "nitten",
+    "tyve", "tredive", "fyrre", "fyre", "halvtreds", "tres", "halvfjerds", "firs", "halvfems",
+    # English digits and tens
+    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen",
+    "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"
+}
+
+# Danish compound numbers like "seksogfyre" (46), "enogtres" (61)
+_DK_COMPOUND_NUMBER_RE = re.compile(
+    r'^(?:en|to|tre|fire|fem|seks|syv|otte|ni)og(?:tyve|tredive|fyrre|fyre|halvtreds|tres|halvfjerds|firs|halvfems)$',
+    re.IGNORECASE
+)
+
+def is_number_word(token: str) -> bool:
+    token_clean = token.lower().strip("-.,")
+    if not token_clean:
+        return False
+    if token_clean.isdigit():
+        return True
+    if token_clean in _NUM_WORDS:
+        return True
+    if _DK_COMPOUND_NUMBER_RE.match(token_clean):
+        return True
+    # Handle hyphenated English numbers like "forty-six"
+    if "-" in token_clean:
+        parts = token_clean.split("-")
+        if all(p in _NUM_WORDS for p in parts):
+            return True
+    return False
+
+
 def normalize_street(s: str) -> str:
     s = s.lower().strip()
     return "".join(re.findall(r'[\w]', s))
@@ -109,12 +144,15 @@ def extract_street_name(line: str) -> str:
     if not tokens:
         return ""
 
-    # Check if the last token is a house number (starts with a digit)
-    if len(tokens) > 1 and tokens[-1][0].isdigit():
-        street_name = " ".join(tokens[:-1])
-    else:
-        street_name = " ".join(tokens)
+    # Peel off number tokens from the end (leaves at least 1 token as the street name)
+    while len(tokens) > 1:
+        last_token = tokens[-1]
+        if last_token[0].isdigit() or is_number_word(last_token):
+            tokens.pop()
+        else:
+            break
 
+    street_name = " ".join(tokens)
     return street_name.strip()
 
 
@@ -173,10 +211,8 @@ def _match_street(user_address: str, postal_code: str):
     # Extract house number from the cleaned address (part before the first comma)
     parts = clean_addr.split(",")
     street_and_number = parts[0].strip()
-    user_tokens = street_and_number.split()
-    house_number = ""
-    if len(user_tokens) > 1 and user_tokens[-1][0].isdigit():
-        house_number = " " + user_tokens[-1]
+    house_suffix = street_and_number[len(user_street):].strip()
+    house_number = (" " + house_suffix) if house_suffix else ""
 
     # 1. Exact Match Check (fast)
     if user_street_lower in db_streets:
@@ -196,6 +232,17 @@ def _match_street(user_address: str, postal_code: str):
         ratio_norm = difflib.SequenceMatcher(None, user_street_norm, db_street_norm).ratio()
 
         max_ratio = max(ratio_raw, ratio_norm)
+
+        # Check prefix match bonus
+        is_prefix = False
+        if user_street_lower.startswith(db_street) or user_street_norm.startswith(db_street_norm):
+            is_prefix = True
+
+        if is_prefix:
+            # Assign prefix match ratio: 0.95 + length bonus to prefer longer matched street names
+            prefix_ratio = 0.95 + (len(db_street) / 1000.0)
+            max_ratio = max(max_ratio, prefix_ratio)
+
         if max_ratio > best_ratio:
             best_ratio = max_ratio
             best_street_match = db_street
