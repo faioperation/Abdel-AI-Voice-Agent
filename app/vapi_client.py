@@ -232,29 +232,80 @@ async def create_order_tool(tool_name: str = "save_order", language: str = "en")
 async def create_address_verification_tool(tool_name: str = "verify_delivery_address") -> str:
     """
     Ensures a single 'verify_delivery_address' tool exists in the Vapi account.
-    If it exists, reuses it.
+    If it exists, updates it. If not, creates it.
+
+    The tool now accepts shop config (lat, lng, radius, postal codes) as arguments
+    so the AI reads them from each assistant's MENUDATA and passes them here —
+    keeping this endpoint fully stateless and multi-tenant.
     """
     from .config import BACKEND_URL
-    
+
     function_payload = {
         "name": tool_name,
-        "description": "Verifies if the customer's street address is within the acceptable delivery zone for their 4-digit postal code. Use this tool ONLY when you have both a separate 4-digit postal code and a street name + house number. Do not include the postal code or city inside the address parameter.",
+        "description": (
+            "Validates the customer's delivery address using Google Maps and checks "
+            "whether it falls within the shop's delivery zone. Call this tool ONLY for "
+            "delivery orders, after collecting both the street address and 4-digit postal code. "
+            "Read shop_lat, shop_lng, delivery_radius_km, and allowed_postal_codes from the "
+            "MENUDATA in your system prompt and pass them as arguments every time you call this tool."
+        ),
         "parameters": {
             "type": "object",
             "properties": {
-                "postal_code": {"type": "string", "description": "The 4-digit postal code as digits only (e.g. '2860'). Convert spoken Danish numbers like 'otteogtyve tres' to '2860' before calling. Never pass words or the city name."},
-                "address": {"type": "string", "description": "The street address + house number ONLY (e.g. Vesterbrogade 14). Do not include the postal code or city."}
+                "address": {
+                    "type": "string",
+                    "description": (
+                        "The customer's street name and house number ONLY "
+                        "(e.g. 'Søborg Hovedgade 12'). Do NOT include the postal code or city name."
+                    )
+                },
+                "postal_code": {
+                    "type": "string",
+                    "description": (
+                        "The 4-digit postal code as digits only (e.g. '2860'). "
+                        "Convert spoken Danish numbers like 'otteogtyve tres' to '2860' before calling. "
+                        "Never pass words or the city name."
+                    )
+                },
+                "shop_lat": {
+                    "type": "number",
+                    "description": (
+                        "The shop's latitude. Read this from the MENUDATA field 'shop_lat' "
+                        "in your system prompt (e.g. 55.7295). Never send 0."
+                    )
+                },
+                "shop_lng": {
+                    "type": "number",
+                    "description": (
+                        "The shop's longitude. Read this from the MENUDATA field 'shop_lng' "
+                        "in your system prompt (e.g. 12.3755). Never send 0."
+                    )
+                },
+                "delivery_radius_km": {
+                    "type": "number",
+                    "description": (
+                        "The delivery radius in kilometres. Read this from the MENUDATA field "
+                        "'delivery_radius_km' in your system prompt (e.g. 7). Never send 0."
+                    )
+                },
+                "allowed_postal_codes": {
+                    "type": "string",
+                    "description": (
+                        "Comma-separated list of postal codes the shop delivers to, "
+                        "from the MENUDATA field 'allowed_postal_codes' (e.g. '2860,2800,2830'). "
+                        "Send an empty string if not specified in MENUDATA."
+                    )
+                }
             },
-            "required": ["postal_code", "address"]
+            "required": ["address", "postal_code", "shop_lat", "shop_lng", "delivery_radius_km"]
         }
     }
 
-    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://test24.fireai.agency"
+    clean_backend_url = BACKEND_URL.rstrip('/') if BACKEND_URL else "https://25.fireai.agency"
     server_url = f"{clean_backend_url}/api/verify-address"
 
-    # 1. Check if tool already exists
+    # 1. Check if tool already exists — update it if so
     try:
-#        async with httpx.AsyncClient(timeout=20) as client:
         client = http_client.get_vapi_client()
         resp = await client.get(f"{VAPI_BASE}/tool", headers=vapi_headers())
         if resp.status_code == 200:
@@ -267,6 +318,7 @@ async def create_address_verification_tool(tool_name: str = "verify_delivery_add
                         "server": {"url": server_url}
                     }
                     await client.patch(f"{VAPI_BASE}/tool/{tool_id}", json=patch_payload, headers=vapi_headers())
+                    logger.info(f"Updated address verification tool schema: {tool_id}")
                     return tool_id
     except Exception as e:
         logger.warning(f"Error checking/updating address verification tool: {e}")
@@ -278,9 +330,9 @@ async def create_address_verification_tool(tool_name: str = "verify_delivery_add
         "server": {"url": server_url}
     }
 
-#    async with httpx.AsyncClient(timeout=20) as client:
     client = http_client.get_vapi_client()
     response = await client.post(f"{VAPI_BASE}/tool", json=payload, headers=vapi_headers())
     if response.status_code not in (200, 201):
         raise Exception(f"Address verification tool creation failed: {response.text}")
+    logger.info(f"Created new address verification tool")
     return response.json()["id"]

@@ -1,0 +1,71 @@
+00:00:00,940 --> 00:00:03,940 [Speaker 0]
+Welcome to FoodVoice.ai. What can I help you with today?
+
+00:00:05,240 --> 00:00:08,460 [Speaker 1]
+Hi, I would like a bag of fries and a pizza with pineapple.
+
+00:00:11,520 --> 00:00:20,550 [Speaker 0]
+I can offer you a small bag of fries for kr. For pizza with pineapple, we have the Hawaii pizza, which is with ham and pineapple. Do you want it in regular size for kr.,
+
+00:00:21,740 --> 00:00:25,900 [Speaker 0]
+deep pan for kr. or family size for kr.?
+
+00:00:27,720 --> 00:00:28,500 [Speaker 1]
+The regular one, please.
+
+00:00:32,040 --> 00:00:39,980 [Speaker 0]
+Perfect. I've listed a regular-sized Hawaiian pizza for kr. and a small bag of fries for kr. Should it be for pick-up or delivery?
+
+00:00:41,240 --> 00:00:42,140 [Speaker 1]
+It needs to be for delivery.
+
+00:00:44,540 --> 00:00:47,860 [Speaker 0]
+To arrange delivery, I need your four-digit zip code.
+
+00:00:49,060 --> 00:00:51,180 [Speaker 1]
+That's twenty-six zero zero.
+
+00:00:53,880 --> 00:00:55,640 [Speaker 0]
+Thank you. What's the street name and house number?
+
+00:00:57,080 --> 00:00:58,720 [Speaker 1]
+That's Statenevej forty-six.
+
+00:01:01,660 --> 00:01:02,740 [Speaker 0]
+Wait a moment.
+
+00:01:04,340 --> 00:01:07,420 [Speaker 0]
+I've registered it as Søndre Ringvej forty-six. Is that correct?
+
+00:01:09,040 --> 00:01:11,140 [Speaker 1]
+No, it's Statenevej seksogfyre.
+
+00:01:13,820 --> 00:01:19,660 [Speaker 0]
+Thanks for the clarification. I've now noted the address as Søndervej seksogfyre. What's your name?
+
+00:01:19,660 --> 00:01:21,120 [Speaker 1]
+No, it's Statenevej.
+
+00:01:23,300 --> 00:01:27,800 [Speaker 0]
+Thanks for the correction. I've now noted the address as Statenevej seksogfyre. What's your name?
+
+00:01:29,180 --> 00:01:29,880 [Speaker 1]
+This is Johannes.
+
+00:01:32,040 --> 00:01:46,460 [Speaker 0]
+Thank you, Johannes. I have now noted your order. A regular-sized Hawaiian pizza for kr. and a small tray of fries for kr. Delivery to Statenevej seksogfyre. The total price will be one hundred and thirty-six kroner. Would you like something to drink with your order?
+
+00:01:47,760 --> 00:01:48,240 [Speaker 1]
+Otherwise, thank you.
+
+00:01:51,010 --> 00:01:53,340 [Speaker 0]
+Perfect, Johannes. Should I send the order?
+
+00:01:54,620 --> 00:01:54,979 [Speaker 1]
+Yes, please.
+
+00:02:02,880 --> 00:02:04,980 [Speaker 0]
+Just a moment, I'll send your order out.
+
+00:02:06,080 --> 00:02:08,500 [Speaker 0]
+There you go. Your order has now been received, and we're getting started.

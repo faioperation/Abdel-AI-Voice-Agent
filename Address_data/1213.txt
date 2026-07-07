@@ -1,5 +1,0 @@
-"Bertel Thorvaldsens Plads 3, 1213 København K"
-"Bertel Thorvaldsens Plads 1, 1213 København K"
-"Bertel Thorvaldsens Plads 2, st., 1213 København K"
-"Bertel Thorvaldsens Plads 2, 1., 1213 København K"
-"Bertel Thorvaldsens Plads 2, 1213 København K"
