@@ -753,11 +753,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                         "model": "gpt-4o",
                         "url": f"{clean_backend_url}/api/chat/completions",
                         "messages": [{"role": "system", "content": final_prompt}],
-<<<<<<< HEAD
                         "toolIds": valid_tools,
-=======
-                        "toolIds": list(set(current_model.get("toolIds", []) + [order_tool_id, address_tool_id])),
->>>>>>> f18e905 (Update address validation and assistant logic)
                         "temperature": 0.3,
                         "headers": {
                             "x-vapi-secret": VAPI_SECRET

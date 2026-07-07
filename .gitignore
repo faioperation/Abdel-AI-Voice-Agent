@@ -54,3 +54,13 @@ Pronounciation_fixes-pronunciations (1).json
 call-logs-2026-06-18T04-50-35-609Z.json
 new agent prompt after creation.txt
 new agent prompt after creation.txt
+analysis/*.csv
+analysis/*
+cleanup_missing_tools.py
+fix_assistants.py
+scratch_test.py
+scratch_test2.py
+new agent prompt after creation.txt
+D:\Spartacus-bubble-AI\Abdel-AI-Voice-Agent\analysis
+Address_data/*
+Address_data

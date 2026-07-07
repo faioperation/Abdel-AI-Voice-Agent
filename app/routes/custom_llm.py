@@ -284,6 +284,14 @@ async def stream_openai_response(payload: dict):
                             new_chunk = copy.deepcopy(chunk)
                             new_chunk["choices"][0]["delta"]["content"] = processed
                             yield f"data: {json.dumps(new_chunk)}\n\n"
+                        elif len(buffer) > 15:
+                            # Dynamic flush for very long words (TTFT optimization)
+                            processed = apply_phonemes(buffer)
+                            buffer = ""
+                            first_flush_done = True
+                            new_chunk = copy.deepcopy(chunk)
+                            new_chunk["choices"][0]["delta"]["content"] = processed
+                            yield f"data: {json.dumps(new_chunk)}\n\n"
                         else:
                             # No boundary yet — emit empty metadata chunk to keep the stream alive
                             empty = copy.deepcopy(chunk)

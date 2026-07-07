@@ -1,0 +1,11 @@
+VAPI_API_KEY=9e1a...344e
+VAPI_PUBLIC_KEY=283c94fc...a2f94d4
+OPENAI_API_KEY = sk-proj-3F8uKK8I...el7hhD0QA
+ADMIN_USERNAME=abdel
+ADMIN_PASSWORD=abdel2026
+SECRET_KEY=admin2026
+DATABASE_URL=postgresql://postgres.fsbwymnp...abase.com:5432/postgres
+BACKEND_URL=https://test24.fireai.agency
+TWILIO_ACCOUNT_SID=ACd16d3....5acb9
+TWILIO_AUTH_TOKEN=0e0....ffbe12df
+TWILIO_FROM_NUMBER=+12184137308

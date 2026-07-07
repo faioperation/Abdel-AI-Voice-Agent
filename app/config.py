@@ -9,6 +9,10 @@ VAPI_PUBLIC_KEY = os.getenv("VAPI_PUBLIC_KEY", "")
 VAPI_SECRET = os.getenv("VAPI_SECRET", "my-vapi-secret-key") # Default for dev
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+# Google Maps
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+GOOGLE_MAPS_REGION_CODE = os.getenv("GOOGLE_MAPS_REGION_CODE", "DK")
+
 # Admin auth
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "admin123")
