@@ -97,7 +97,7 @@ async def create_assistant(
 
 
     transcriber_config = {
-        "model": "default",
+        "model": "enhanced",
         "language": "da",
         "provider": "speechmatics",
         "fallbackPlan": {
@@ -717,7 +717,7 @@ async def fix_all_assistants_prompt(db: Session = Depends(get_db)):
                 messages.insert(0, {"role": "system", "content": final_prompt})
 
                 transcriber_config = {
-                    "model": "default",
+                    "model": "enhanced",
                     "language": "da",
                     "provider": "speechmatics",
                     "fallbackPlan": {
